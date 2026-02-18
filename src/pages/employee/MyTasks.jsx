@@ -113,25 +113,38 @@ const MyTasks = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#1976d2', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            My Tasks
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              My Tasks
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Track and manage your assigned tasks
+            </Typography>
+          </Box>
         </Box>
-        <Typography variant="h6">
-          Employee Dashboard
-        </Typography>
+        <Chip
+          label="Task Management"
+          sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600 }}
+        />
       </Box>
 
       {/* Main Content */}
@@ -192,7 +205,7 @@ const MyTasks = () => {
         <Typography variant="h5" gutterBottom>
           Task List
         </Typography>
-        
+
         <Grid container spacing={3}>
           {tasks.map((task) => (
             <Grid item xs={12} md={6} lg={4} key={task.id}>
@@ -204,11 +217,11 @@ const MyTasks = () => {
                     </Typography>
                     {getStatusIcon(task.status)}
                   </Box>
-                  
+
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {task.description}
                   </Typography>
-                  
+
                   <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                     <Chip
                       icon={getPriorityIcon(task.priority)}
@@ -222,19 +235,19 @@ const MyTasks = () => {
                       size="small"
                     />
                   </Box>
-                  
+
                   <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2">Progress</Typography>
                       <Typography variant="body2">{task.progress}%</Typography>
                     </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={task.progress} 
+                    <LinearProgress
+                      variant="determinate"
+                      value={task.progress}
                       sx={{ height: 8, borderRadius: 4 }}
                     />
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
@@ -249,11 +262,11 @@ const MyTasks = () => {
                     </Typography>
                   </Box>
                 </CardContent>
-                
+
                 <Box sx={{ p: 2, pt: 0 }}>
-                  <Button 
-                    variant="contained" 
-                    fullWidth 
+                  <Button
+                    variant="contained"
+                    fullWidth
                     disabled={task.status === 'completed'}
                   >
                     {task.status === 'completed' ? 'Completed' : 'Update Progress'}

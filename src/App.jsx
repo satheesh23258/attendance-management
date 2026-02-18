@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+
 import CssBaseline from '@mui/material/CssBaseline'
 import { Toaster } from 'react-hot-toast'
 
@@ -45,6 +46,7 @@ import SystemSettings from './pages/admin/SystemSettings'
 import UserManagement from './pages/admin/UserManagement'
 import HybridPermissions from './pages/admin/HybridPermissions'
 import ManagePermissions from './pages/admin/ManagePermissions'
+import AdminServiceManagement from './pages/admin/AdminServiceManagement'
 import ServiceList from './pages/services/ServiceList'
 import ServiceForm from './pages/services/ServiceForm'
 import ServiceDetails from './pages/services/ServiceDetails'
@@ -96,7 +98,6 @@ function App() {
 
         {/* Original Dashboard Routes (fallback) */}
         <Route path="/dashboard-original/:role" element={<WorkingDashboard />} />
-
         {/* Employee Routes */}
         <Route path="/employee/mytasks" element={<MyTasks />} />
         <Route path="/employee/checkinout" element={<CheckInOutSimple />} />
@@ -109,19 +110,15 @@ function App() {
         {/* Aliases so quick-action paths work */}
         <Route path="/employee/location" element={<MyLocation />} />
         <Route path="/employee/profile" element={<MyProfileSimple />} />
-
         {/* Admin Routes */}
         <Route path="/admin/manage-employees" element={<ManageEmployees />} />
         <Route path="/admin/employees" element={<EmployeeList />} />
-        <Route path="/admin/services" element={<ServiceList />} />
         <Route path="/admin/reports" element={<SystemReports />} />
         <Route path="/admin/system-reports" element={<SystemReports />} />
         <Route path="/admin/system-settings" element={<SystemSettings />} />
         <Route path="/admin/user-management" element={<UserManagement />} />
-        <Route path="/admin/user-management" element={<UserManagement />} />
         <Route path="/admin/hybrid-permissions" element={<HybridPermissions />} />
         <Route path="/admin/manage-permissions" element={<ManagePermissions />} />
-
         {/* HR Routes */}
         <Route path="/hr/employee-records" element={<EmployeeRecords />} />
         <Route path="/hr/attendance-reports" element={<AttendanceReports />} />
@@ -130,7 +127,6 @@ function App() {
         <Route path="/hr/leave-application" element={<LeaveApplication />} />
         <Route path="/hr/test-leave" element={<TestLeave />} />
         <Route path="/hr/attendance-management" element={<HRAttendance />} />
-
         {/* Service Management Routes */}
         <Route path="/services" element={<ServiceList />} />
         <Route path="/services/create" element={<div>Create Service Request - Coming Soon</div>} />
@@ -140,8 +136,10 @@ function App() {
         <Route path="/admin/employees/new" element={<EmployeeForm />} />
         <Route path="/admin/employees/edit/:id" element={<EmployeeForm />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
+        <Route path="/admin/services" element={<AdminServiceManagement />} />
         <Route path="/admin/services/new" element={<ServiceForm />} />
         <Route path="/admin/services/edit/:id" element={<ServiceForm />} />
+        <Route path="/admin/services/:id" element={<ServiceDetails />} />
 
         {/* Location Tracking Routes */}
         <Route path="/location/tracking" element={<LiveLocation />} />
@@ -166,7 +164,6 @@ function App() {
 
         {/* API Documentation Route */}
         <Route path="/api/docs" element={<div>API Documentation - Coming Soon</div>} />
-
         {/* Home Route */}
         <Route path="/" element={<LoginPortal />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -6,45 +6,69 @@ import {
   Typography,
   Button,
   Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  LinearProgress
+  IconButton
 } from '@mui/material'
 import {
   ArrowBack,
   Download,
   Assessment,
   TrendingUp,
-  TrendingDown,
-  People,
-  Schedule,
-  AttachMoney,
-  Business
+  TrendingDown
 } from '@mui/icons-material'
 
 const SystemReports = () => {
   const [reportType, setReportType] = useState('overview')
   const [timeRange, setTimeRange] = useState('month')
-  const [openDialog, setOpenDialog] = useState(false)
 
   const handleBack = () => {
     window.history.back()
+  }
+
+  const systemData = {
+    overview: {
+      totalUsers: 156,
+      activeUsers: 142,
+      systemUptime: '99.9%',
+      avgResponseTime: '1.2s',
+      errorRate: '0.3%',
+      storageUsed: '67%'
+    },
+    users: {
+      totalEmployees: 156,
+      activeEmployees: 142,
+      newUsers: 12,
+      userSatisfaction: 4.2,
+      loginFrequency: 4.8,
+      avgSessionTime: '2h 15m'
+    },
+    performance: {
+      serverResponse: '1.2s',
+      pageLoadTime: '2.1s',
+      apiResponseTime: '0.8s',
+      databaseQueryTime: '0.3s',
+      cacheHitRate: '94%',
+      systemLoad: '45%'
+    },
+    security: {
+      totalLogins: 12450,
+      failedLogins: 156,
+      securityAlerts: 3,
+      blockedIPs: 12,
+      passwordResets: 45,
+      twoFactorEnabled: '78%'
+    },
+    financial: {
+      totalRevenue: 2450000,
+      operationalCosts: 890000,
+      profit: 1560000,
+      profitMargin: '63.7%',
+      costPerUser: 5670,
+      revenueGrowth: '12.3%'
+    }
   }
 
   const handleExport = () => {
@@ -52,7 +76,7 @@ const SystemReports = () => {
     let data = []
     let filename = ''
     let title = ''
-    
+
     switch (reportType) {
       case 'overview':
         data = [
@@ -124,7 +148,7 @@ const SystemReports = () => {
         filename = 'empty-report.pdf'
         title = 'Empty Report'
     }
-    
+
     // Generate PDF content
     generatePDF(data, filename, title)
   }
@@ -132,7 +156,7 @@ const SystemReports = () => {
   const generatePDF = (data, filename, title) => {
     // Create a new window for printing
     const printWindow = window.open('', '_blank')
-    
+
     // Create HTML content for PDF
     const htmlContent = `
       <!DOCTYPE html>
@@ -164,6 +188,7 @@ const SystemReports = () => {
             background-color: #f2f2f2;
             font-weight: bold;
             color: #2c3e50;
+            color: black;
           }
           .footer {
             margin-top: 30px;
@@ -189,10 +214,10 @@ const SystemReports = () => {
       </body>
       </html>
     `
-    
+
     printWindow.document.write(htmlContent)
     printWindow.document.close()
-    
+
     // Wait for content to load, then print
     printWindow.onload = () => {
       printWindow.print()
@@ -200,49 +225,6 @@ const SystemReports = () => {
       setTimeout(() => {
         printWindow.close()
       }, 1000)
-    }
-  }
-
-  const systemData = {
-    overview: {
-      totalUsers: 156,
-      activeUsers: 142,
-      systemUptime: '99.9%',
-      avgResponseTime: '1.2s',
-      errorRate: '0.3%',
-      storageUsed: '67%'
-    },
-    users: {
-      totalEmployees: 156,
-      activeEmployees: 142,
-      newUsers: 12,
-      userSatisfaction: 4.2,
-      loginFrequency: 4.8,
-      avgSessionTime: '2h 15m'
-    },
-    performance: {
-      serverResponse: '1.2s',
-      pageLoadTime: '2.1s',
-      apiResponseTime: '0.8s',
-      databaseQueryTime: '0.3s',
-      cacheHitRate: '94%',
-      systemLoad: '45%'
-    },
-    security: {
-      totalLogins: 12450,
-      failedLogins: 156,
-      securityAlerts: 3,
-      blockedIPs: 12,
-      passwordResets: 45,
-      twoFactorEnabled: '78%'
-    },
-    financial: {
-      totalRevenue: 2450000,
-      operationalCosts: 890000,
-      profit: 1560000,
-      profitMargin: '63.7%',
-      costPerUser: 5670,
-      revenueGrowth: '12.3%'
     }
   }
 
@@ -500,21 +482,33 @@ const SystemReports = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#d32f2f', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            System Reports
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              System Reports
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Analytical insights and system performance data
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
@@ -556,8 +550,8 @@ const SystemReports = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   fullWidth
                   startIcon={<Assessment />}
                   onClick={handleExport}
@@ -566,8 +560,8 @@ const SystemReports = () => {
                 </Button>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   fullWidth
                   startIcon={<Download />}
                   onClick={handleExport}
@@ -589,8 +583,8 @@ const SystemReports = () => {
               Report Summary
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              This report provides comprehensive insights into system performance, user engagement, 
-              security metrics, and financial data. Use the filters above to customize the report 
+              This report provides comprehensive insights into system performance, user engagement,
+              security metrics, and financial data. Use the filters above to customize the report
               timeframe and focus areas.
             </Typography>
             <Box sx={{ mt: 2 }}>

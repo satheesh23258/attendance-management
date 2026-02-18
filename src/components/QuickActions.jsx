@@ -32,25 +32,25 @@ const QuickActions = ({ role }) => {
       label: 'My Location',
       icon: <LocationOn />,
       path: '/employee/location',
-      color: 'secondary'
+      color: 'primary'
     },
     {
       label: 'My Services',
       icon: <Assignment />,
       path: '/employee/services',
-      color: 'success'
+      color: 'primary'
     },
     {
       label: 'My Profile',
       icon: <TrendingUp />,
       path: '/employee/profile',
-      color: 'info'
+      color: 'primary'
     },
     {
       label: 'Leave Application',
       icon: <Event />,
       path: '/employee/leave-application',
-      color: 'warning'
+      color: 'primary'
     }
   ]
 
@@ -65,31 +65,31 @@ const QuickActions = ({ role }) => {
       label: 'Attendance Reports',
       icon: <Assignment />,
       path: '/hr/attendance-reports',
-      color: 'secondary'
+      color: 'primary'
     },
     {
       label: 'Attendance Management',
       icon: <AccessTime />,
       path: '/hr/attendance-management',
-      color: 'success'
+      color: 'primary'
     },
     {
       label: 'Performance Reviews',
       icon: <TrendingUp />,
       path: '/hr/performance',
-      color: 'info'
+      color: 'primary'
     },
     {
       label: 'Live Tracking',
       icon: <LocationOn />,
       path: '/location/tracking',
-      color: 'warning'
+      color: 'primary'
     },
     {
       label: 'Leave Application',
       icon: <Event />,
       path: '/hr/leave-application',
-      color: 'info'
+      color: 'primary'
     }
   ]
 
@@ -109,7 +109,7 @@ const QuickActions = ({ role }) => {
     {
       label: 'View Services',
       icon: <Assignment />,
-      path: '/services',
+      path: '/admin/services',
       color: 'error'
     },
     {
@@ -148,10 +148,11 @@ const QuickActions = ({ role }) => {
       sx={{
         mb: 3,
         p: 2,
-        backgroundColor: role === 'admin' ? '#d32f2f' : colors.background.paper, // Vibrant red background for admin
+        backgroundColor: role === 'admin' ? '#d32f2f' : (role === 'hr' ? '#FFC107' : (role === 'employee' ? '#1976d2' : colors.background.paper)),
         borderRadius: 2,
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        border: role === 'admin' ? '2px solid #d32f2f' : '1px solid #e2e8f0' // Thicker red border for admin
+        border: role === 'admin' ? '2px solid #d32f2f' : (role === 'hr' ? '2px solid #FFC107' : (role === 'employee' ? '2px solid #1976d2' : '1px solid #e2e8f0')),
+        color: (role === 'admin' || role === 'hr' || role === 'employee') ? (role === 'hr' ? 'black' : 'white') : 'inherit'
       }}
     >
       <Grid container spacing={2}>
@@ -168,11 +169,16 @@ const QuickActions = ({ role }) => {
                 borderRadius: 1.5,
                 py: 1.5,
                 fontSize: '0.875rem',
-                fontWeight: 500,
+                fontWeight: 600,
                 boxShadow: 'none',
+                backgroundColor: (role === 'admin' || role === 'hr' || role === 'employee') ? 'rgba(255, 255, 255, 0.9)' : undefined,
+                color: (role === 'admin' || role === 'hr' || role === 'employee') ? (role === 'hr' ? '#FFC107' : (role === 'admin' ? '#d32f2f' : '#1976d2')) : undefined,
                 '&:hover': {
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }
+                  backgroundColor: 'white',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                  transform: 'translateY(-1px)'
+                },
+                transition: 'all 0.2s'
               }}
             >
               {action.label}

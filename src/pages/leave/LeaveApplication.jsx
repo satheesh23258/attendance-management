@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Card,
@@ -56,7 +56,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { leaveAPI } from '../../services/api'
+import { leaveAPI, notificationAPI } from '../../services/api'
 
 const LeaveApplication = () => {
   const { user } = useAuth()
@@ -67,7 +67,7 @@ const LeaveApplication = () => {
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
 
-  // Enhanced Leave Management Features
+  // Leave Balance - Currently hardcoded as backend doesn't provide this yet
   const [leaveBalance, setLeaveBalance] = useState({
     annual: { total: 15, used: 5, remaining: 10 },
     sick: { total: 10, used: 2, remaining: 8 },
@@ -77,54 +77,26 @@ const LeaveApplication = () => {
     emergency: { total: 5, used: 0, remaining: 5 }
   })
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'info',
-      title: 'Leave Policy Update',
-      message: 'Annual leave policy updated to 30 days advance notice',
-      date: '2024-01-15',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'warning',
-      title: 'Leave Balance Low',
-      message: 'You have 2 days of sick leave remaining',
-      date: '2024-01-10',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'success',
-      title: 'Request Approved',
-      message: 'Your annual leave request has been approved',
-      date: '2024-01-05',
-      read: false
-    }
-  ])
+  const [notifications, setNotifications] = useState([])
 
-  const [analytics, setAnalytics] = useState({
-    totalRequests: 156,
-    approvedRequests: 142,
-    rejectedRequests: 8,
-    pendingRequests: 6,
-    averageProcessingTime: 2.5,
-    peakRequestMonth: 'December',
-    commonLeaveType: 'Sick Leave',
-    departmentStats: [
-      { department: 'Engineering', requests: 45, approved: 40 },
-      { department: 'HR', requests: 32, approved: 28 },
-      { department: 'Marketing', requests: 28, approved: 25 }
-    ]
-  })
+
 
   const [leaveRequests, setLeaveRequests] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchLeaveRequests()
+    fetchNotifications()
   }, [user, activeTab])
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await notificationAPI.getAll()
+      setNotifications(res.data.data || res.data || [])
+    } catch (error) {
+      console.error('Failed to fetch notifications', error)
+    }
+  }
 
   const fetchLeaveRequests = async () => {
     try {
@@ -139,7 +111,8 @@ const LeaveApplication = () => {
       }
 
       if (response) {
-        setLeaveRequests(response.data)
+        const data = response.data.data || response.data || []
+        setLeaveRequests(data)
       } else if (isEmployee && activeTab === 0) {
         // Apply tab - no fetch needed
       }
@@ -151,10 +124,14 @@ const LeaveApplication = () => {
     }
   }
 
+
+
   const [formData, setFormData] = useState({
     leaveType: '',
     startDate: '',
     endDate: '',
+    startTime: '',
+    endTime: '',
     reason: '',
     days: 0,
     isHalfDay: false,
@@ -179,9 +156,10 @@ const LeaveApplication = () => {
   const [leaveTypeFilter, setLeaveTypeFilter] = useState('all')
   const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' })
 
-  const isHR = user?.role === 'hr' || (user?.hybridPermissions && user.hybridPermissions.roles.includes('hr'))
-  const isAdmin = user?.role === 'admin'
-  const isEmployee = user?.role === 'employee' || (user?.hybridPermissions && user.hybridPermissions.roles.includes('employee')) || true // Everyone can apply for leave usually
+  const currentPath = window.location.pathname
+  const isHR = !!(user?.role === 'hr' || (user?.hybridPermissions && user.hybridPermissions.roles?.includes('hr')) || currentPath.includes('/hr/'))
+  const isAdmin = !!(user?.role === 'admin' || currentPath.includes('/admin/'))
+  const isEmployee = !!(user?.role === 'employee' || (user?.hybridPermissions && user.hybridPermissions.roles?.includes('employee')) || currentPath.includes('/employee/'))
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -191,8 +169,15 @@ const LeaveApplication = () => {
   }
 
   const calculateDays = () => {
-    if (formData.startDate && formData.endDate) {
+    if (formData.startDate && (formData.endDate || formData.leaveType === 'permission')) {
       const start = new Date(formData.startDate)
+
+      if (formData.leaveType === 'permission') {
+        // For permissions, it's just 1 day but we track hours
+        setFormData(prev => ({ ...prev, days: 0, endDate: prev.startDate }))
+        return
+      }
+
       const end = new Date(formData.endDate)
 
       // Validate that end date is not before start date
@@ -249,7 +234,9 @@ const LeaveApplication = () => {
       const leaveData = {
         leaveType: formData.leaveType,
         startDate: formData.startDate,
-        endDate: formData.endDate,
+        endDate: formData.leaveType === 'permission' ? formData.startDate : formData.endDate,
+        startTime: formData.leaveType === 'permission' ? formData.startTime : null,
+        endTime: formData.leaveType === 'permission' ? formData.endTime : null,
         reason: formData.reason,
         days: formData.days,
         emergencyContact: formData.emergencyContact
@@ -417,19 +404,21 @@ const LeaveApplication = () => {
   }
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'approved': return '#4caf50'
       case 'pending': return '#ff9800'
       case 'rejected': return '#f44336'
+      case 'cancelled': return '#9e9e9e'
       default: return '#757575'
     }
   }
 
   const getStatusIcon = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'approved': return <CheckCircle />
       case 'pending': return <Schedule />
       case 'rejected': return <Cancel />
+      case 'cancelled': return <Cancel />
       default: return <Event />
     }
   }
@@ -437,40 +426,43 @@ const LeaveApplication = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Enhanced Header */}
+      {/* Enhanced Header */}
       <Box sx={{
-        backgroundColor: '#1976d2',
-        color: 'white',
+        background: isEmployee
+          ? 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)'
+          : isAdmin
+            ? 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)'
+            : 'linear-gradient(135deg, #FFC107 0%, #FFB300 100%)',
+        color: isEmployee || isAdmin ? 'white' : 'black',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Tooltip title="Go Back">
-            <IconButton
-              color="inherit"
-              onClick={() => navigate(-1)}
-              sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                }
-              }}
-            >
-              <ArrowBack />
-            </IconButton>
-          </Tooltip>
-          <Typography variant="h4">
-            Leave Management System
-          </Typography>
-          {(isHR || isAdmin) && (
-            <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-              <Chip
-                label={`${getPendingRequestsCount()} Pending`}
-                color="warning"
-                variant="filled"
-                size="small"
-              />
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Leave {isEmployee && activeTab === 0 ? 'Application' : 'Management'}
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              {isEmployee && activeTab === 0
+                ? 'Submit and track your leave requests'
+                : 'Review and manage organizational leave applications'}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {isHR && activeTab === 1 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Chip
                 label={`${getTodayRequestsCount()} Today`}
                 color="info"
@@ -479,8 +471,6 @@ const LeaveApplication = () => {
               />
             </Box>
           )}
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         </Box>
       </Box>
 
@@ -506,7 +496,7 @@ const LeaveApplication = () => {
         {/* Debug Information */}
         <Box sx={{ mb: 2, p: 2, backgroundColor: '#f0f0f0', borderRadius: 1 }}>
           <Typography variant="body2">
-            Debug Info: activeTab={activeTab}, isEmployee={isEmployee.toString()}, isHR={isHR.toString()}, isAdmin={isAdmin.toString()}, userRole={user?.role || 'undefined'}
+            Debug Info: activeTab={activeTab}, isEmployee={String(isEmployee)}, isHR={String(isHR)}, isAdmin={String(isAdmin)}, userRole={user?.role || 'undefined'}
           </Typography>
           <Typography variant="body2">
             Leave Requests Count: {leaveRequests.length}
@@ -533,6 +523,7 @@ const LeaveApplication = () => {
                       <MenuItem value="annual">Annual Leave</MenuItem>
                       <MenuItem value="sick">Sick Leave</MenuItem>
                       <MenuItem value="personal">Personal Leave</MenuItem>
+                      <MenuItem value="permission">Permission (Short duration)</MenuItem>
                       <MenuItem value="maternity">Maternity Leave</MenuItem>
                       <MenuItem value="paternity">Paternity Leave</MenuItem>
                       <MenuItem value="emergency">Emergency Leave</MenuItem>
@@ -554,43 +545,70 @@ const LeaveApplication = () => {
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField
-                    fullWidth
-                    type="date"
-                    label="End Date"
-                    value={formData.endDate}
-                    onChange={(e) => {
-                      handleInputChange('endDate', e.target.value)
-                      calculateDays()
-                    }}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <TextField
-                      fullWidth
-                      label="Number of Days"
-                      value={formData.days}
-                      InputProps={{ readOnly: true }}
-                      helperText="Automatically calculated"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData.isHalfDay}
-                          onChange={(e) => {
-                            handleInputChange('isHalfDay', e.target.checked)
-                            calculateDays()
-                          }}
-                          size="small"
+                {formData.leaveType === 'permission' ? (
+                  <>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <TextField
+                        fullWidth
+                        type="time"
+                        label="Start Time"
+                        value={formData.startTime}
+                        onChange={(e) => handleInputChange('startTime', e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <TextField
+                        fullWidth
+                        type="time"
+                        label="End Time"
+                        value={formData.endTime}
+                        onChange={(e) => handleInputChange('endTime', e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                  </>
+                ) : (
+                  <>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <TextField
+                        fullWidth
+                        type="date"
+                        label="End Date"
+                        value={formData.endDate}
+                        onChange={(e) => {
+                          handleInputChange('endDate', e.target.value)
+                          calculateDays()
+                        }}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <TextField
+                          fullWidth
+                          label="Number of Days"
+                          value={formData.days}
+                          InputProps={{ readOnly: true }}
+                          helperText="Automatically calculated"
                         />
-                      }
-                      label="Half Day"
-                    />
-                  </Box>
-                </Grid>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={formData.isHalfDay}
+                              onChange={(e) => {
+                                handleInputChange('isHalfDay', e.target.checked)
+                                calculateDays()
+                              }}
+                              size="small"
+                            />
+                          }
+                          label="Half Day"
+                        />
+                      </Box>
+                    </Grid>
+                  </>
+                )}
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     fullWidth
@@ -607,12 +625,21 @@ const LeaveApplication = () => {
                   <TextField
                     fullWidth
                     multiline
-                    rows={4}
-                    label="Reason"
+                    rows={6}
+                    label="Detailed Reason for Leave"
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    placeholder="Please provide detailed reason for leave..."
-                    helperText="Be specific about dates and reason"
+                    placeholder="Please provide a clear and detailed reason for your leave request (e.g. medical emergency, family event, personal errands)..."
+                    helperText="Providing a detailed reason helps HR process your request faster"
+                    sx={{
+                      backgroundColor: 'rgba(255, 193, 7, 0.05)',
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: 'rgba(255, 193, 7, 0.3)' },
+                        '&:hover fieldset': { borderColor: '#FFC107' },
+                        '&.Mui-focused fieldset': { borderColor: '#FFC107' },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#b28900' }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -808,10 +835,16 @@ const LeaveApplication = () => {
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                              {request.days} days
+                              {request.leaveType?.toLowerCase() === 'permission'
+                                ? 'Permission'
+                                : `${request.days} days`}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" display="block">
-                              {request.startDate} to {request.endDate}
+                              {request.startDate}
+                              {request.leaveType?.toLowerCase() === 'permission' && request.startTime && (
+                                <> ({request.startTime} - {request.endTime})</>
+                              )}
+                              {request.leaveType?.toLowerCase() !== 'permission' && ` to ${request.endDate}`}
                             </Typography>
                           </TableCell>
                           <TableCell>
@@ -824,7 +857,7 @@ const LeaveApplication = () => {
                           </TableCell>
                           <TableCell>
                             <Chip
-                              label={request.status.toUpperCase()}
+                              label={(request.status || 'pending').toUpperCase()}
                               size="small"
                               icon={getStatusIcon(request.status)}
                               sx={{
@@ -833,6 +866,11 @@ const LeaveApplication = () => {
                                 fontWeight: 'bold'
                               }}
                             />
+                            {request.rejectionReason && request.status?.toLowerCase() === 'rejected' && (
+                              <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                Reason: {request.rejectionReason}
+                              </Typography>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
@@ -1089,18 +1127,36 @@ const LeaveApplication = () => {
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
-                              {request.days} days
+                              {request.leaveType?.toLowerCase() === 'permission' ? 'Permission' : `${request.days} days`}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {request.startDate} to {request.endDate}
+                              {request.startDate}
+                              {request.leaveType?.toLowerCase() === 'permission' && request.startTime && (
+                                <> ({request.startTime} - {request.endTime})</>
+                              )}
+                              {request.leaveType?.toLowerCase() !== 'permission' && ` to ${request.endDate}`}
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                              {request.reason}
-                            </Typography>
+                            <Tooltip title={request.reason} arrow placement="top">
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  maxWidth: 300,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 3,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  lineHeight: 1.2,
+                                  cursor: 'help'
+                                }}
+                              >
+                                {request.reason}
+                              </Typography>
+                            </Tooltip>
                             {request.emergencyContact && (
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                                 📞 {request.emergencyContact}
                               </Typography>
                             )}
@@ -1205,12 +1261,31 @@ const LeaveApplication = () => {
                 </Typography>
                 <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
                   <Typography variant="body2"><strong>Type:</strong> {selectedRequest.leaveType}</Typography>
-                  <Typography variant="body2"><strong>Duration:</strong> {selectedRequest.days} days</Typography>
-                  <Typography variant="body2"><strong>Period:</strong> {selectedRequest.startDate} to {selectedRequest.endDate}</Typography>
-                  <Typography variant="body2"><strong>Reason:</strong> {selectedRequest.reason}</Typography>
+                  <Typography variant="body2">
+                    <strong>Duration:</strong> {selectedRequest.leaveType?.toLowerCase() === 'permission'
+                      ? `${selectedRequest.startTime} - ${selectedRequest.endTime}`
+                      : `${selectedRequest.days} days`}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Period:</strong> {selectedRequest.startDate}
+                    {selectedRequest.leaveType?.toLowerCase() !== 'permission' && ` to ${selectedRequest.endDate}`}
+                  </Typography>
                   {selectedRequest.attachment && (
                     <Typography variant="body2"><strong>Attachment:</strong> 📎 {selectedRequest.attachment}</Typography>
                   )}
+                </Box>
+                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, color: '#b28900', fontWeight: 'bold' }}>
+                  Employee Justification
+                </Typography>
+                <Box sx={{
+                  p: 2,
+                  backgroundColor: 'rgba(255, 193, 7, 0.05)',
+                  borderLeft: '4px solid #FFC107',
+                  borderRadius: '0 4px 4px 0'
+                }}>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                    {selectedRequest.reason || 'No reason provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
@@ -1218,8 +1293,20 @@ const LeaveApplication = () => {
                   Application Status
                 </Typography>
                 <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
-                  <Typography variant="body2"><strong>Applied:</strong> {selectedRequest.appliedDate}</Typography>
-                  <Typography variant="body2"><strong>Status:</strong> {selectedRequest.status}</Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}><strong>Applied:</strong> {selectedRequest.appliedDate}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="body2"><strong>Status:</strong></Typography>
+                    <Chip
+                      label={(selectedRequest.status || 'pending').toUpperCase()}
+                      size="small"
+                      icon={getStatusIcon(selectedRequest.status)}
+                      sx={{
+                        backgroundColor: getStatusColor(selectedRequest.status),
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                  </Box>
                   <Typography variant="body2"><strong>Processed by:</strong> {selectedRequest.approvedBy || 'Pending'}</Typography>
                   {selectedRequest.approvedDate && (
                     <Typography variant="body2"><strong>Processed Date:</strong> {selectedRequest.approvedDate}</Typography>

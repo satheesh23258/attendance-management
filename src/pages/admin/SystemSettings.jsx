@@ -41,34 +41,34 @@ const SystemSettings = () => {
     language: 'English',
     dateFormat: 'MM/DD/YYYY',
     timeFormat: '12-hour',
-    
+
     // Security Settings
     sessionTimeout: 30,
     passwordMinLength: 8,
     requireTwoFactor: true,
     maxLoginAttempts: 5,
     lockoutDuration: 15,
-    
+
     // Notification Settings
     emailNotifications: true,
     smsNotifications: false,
     pushNotifications: true,
     digestFrequency: 'daily',
-    
+
     // System Settings
     maintenanceMode: false,
     debugMode: false,
     logLevel: 'INFO',
     backupFrequency: 'daily',
     retentionDays: 90,
-    
+
     // Email Settings
     smtpHost: 'smtp.company.com',
     smtpPort: 587,
     smtpUsername: 'noreply@company.com',
     smtpPassword: '••••••••',
     emailFrom: 'noreply@company.com',
-    
+
     // Company Settings
     companyName: 'Tech Company Inc.',
     companyAddress: '123 Business St, New York, NY 10001',
@@ -152,36 +152,60 @@ const SystemSettings = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#d32f2f', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            System Settings
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              System Settings
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Configure global system parameters and security
+            </Typography>
+          </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="contained"
             color="inherit"
             startIcon={<Refresh />}
             onClick={handleReset}
+            sx={{
+              bgcolor: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.3)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
+            }}
           >
             Reset
           </Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="contained"
             color="inherit"
             startIcon={<Save />}
             onClick={handleSave}
+            sx={{
+              bgcolor: 'white',
+              color: '#d32f2f',
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#f5f5f5' }
+            }}
           >
             Save
           </Button>
@@ -562,15 +586,15 @@ const SystemSettings = () => {
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 startIcon={<Refresh />}
                 onClick={handleReset}
               >
                 Reset to Defaults
               </Button>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 startIcon={<Save />}
                 onClick={handleSave}
               >

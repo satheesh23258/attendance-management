@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Card,
@@ -26,7 +26,8 @@ import {
   InputLabel,
   Select,
   LinearProgress,
-  Rating
+  Rating,
+  CircularProgress
 } from '@mui/material'
 import {
   ArrowBack,
@@ -38,90 +39,38 @@ import {
   FilterList,
   Visibility
 } from '@mui/icons-material'
+import { reportsAPI } from '../../services/api'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 const Performance = () => {
-  const [performanceData, setPerformanceData] = useState([
-    {
-      id: 1,
-      employeeName: 'John Doe',
-      employeeId: 'EMP001',
-      department: 'Engineering',
-      position: 'Senior Software Engineer',
-      overallRating: 4.8,
-      quality: 4.5,
-      productivity: 4.9,
-      teamwork: 4.7,
-      punctuality: 4.8,
-      initiative: 4.6,
-      reviewPeriod: 'Q4 2023',
-      reviewer: 'Jane Smith',
-      strengths: ['Excellent problem solving', 'Strong technical skills', 'Good team player'],
-      improvements: ['Time management', 'Documentation'],
-      goals: ['Complete advanced certification', 'Mentor junior developers']
-    },
-    {
-      id: 2,
-      employeeName: 'Jane Smith',
-      employeeId: 'EMP002',
-      department: 'HR',
-      position: 'HR Manager',
-      overallRating: 4.5,
-      quality: 4.7,
-      productivity: 4.3,
-      teamwork: 4.8,
-      punctuality: 4.9,
-      initiative: 4.4,
-      reviewPeriod: 'Q4 2023',
-      reviewer: 'Mike Wilson',
-      strengths: ['Excellent communication', 'Leadership skills', 'Process improvement'],
-      improvements: ['Strategic planning', 'Data analysis'],
-      goals: ['Implement HR analytics', 'Develop leadership training']
-    },
-    {
-      id: 3,
-      employeeName: 'Mike Johnson',
-      employeeId: 'EMP003',
-      department: 'Sales',
-      position: 'Sales Representative',
-      overallRating: 3.8,
-      quality: 3.5,
-      productivity: 4.2,
-      teamwork: 3.9,
-      punctuality: 3.7,
-      initiative: 3.6,
-      reviewPeriod: 'Q4 2023',
-      reviewer: 'Sarah Williams',
-      strengths: ['Customer relationship', 'Sales skills', 'Persistence'],
-      improvements: ['Product knowledge', 'Closing techniques'],
-      goals: ['Increase sales by 15%', 'Complete product training']
-    },
-    {
-      id: 4,
-      employeeName: 'Sarah Williams',
-      employeeId: 'EMP004',
-      department: 'Marketing',
-      position: 'Marketing Specialist',
-      overallRating: 4.2,
-      quality: 4.3,
-      productivity: 4.1,
-      teamwork: 4.4,
-      punctuality: 4.0,
-      initiative: 4.5,
-      reviewPeriod: 'Q4 2023',
-      reviewer: 'Tom Brown',
-      strengths: ['Creative thinking', 'Campaign management', 'Analytics'],
-      improvements: ['Budget management', 'Cross-functional collaboration'],
-      goals: ['Launch 3 successful campaigns', 'Improve ROI by 10%']
-    }
-  ])
-
+  const navigate = useNavigate()
+  const [performanceData, setPerformanceData] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filterDepartment, setFilterDepartment] = useState('')
   const [filterRating, setFilterRating] = useState('')
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
 
+  useEffect(() => {
+    fetchPerformanceData()
+  }, [])
+
+  const fetchPerformanceData = async () => {
+    try {
+      setLoading(true)
+      const response = await reportsAPI.getEmployeePerformance()
+      setPerformanceData(response.data.data || response.data || [])
+    } catch (error) {
+      console.error('Error fetching performance data:', error)
+      toast.error('Failed to load performance reviews')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleBack = () => {
-    window.history.back()
+    navigate(-1)
   }
 
   const handleViewDetails = (employee) => {
@@ -132,7 +81,7 @@ const Performance = () => {
   const filteredData = performanceData.filter(employee => {
     return (
       (!filterDepartment || employee.department === filterDepartment) &&
-      (!filterRating || 
+      (!filterRating ||
         (filterRating === '5' && employee.overallRating >= 4.5) ||
         (filterRating === '4' && employee.overallRating >= 3.5 && employee.overallRating < 4.5) ||
         (filterRating === '3' && employee.overallRating >= 2.5 && employee.overallRating < 3.5) ||
@@ -156,7 +105,7 @@ const Performance = () => {
   }
 
   const getInitials = (name) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
   }
 
   const getStatistics = () => {
@@ -165,21 +114,29 @@ const Performance = () => {
     const good = filteredData.filter(e => e.overallRating >= 3.5 && e.overallRating < 4.5).length
     const average = filteredData.filter(e => e.overallRating >= 2.5 && e.overallRating < 3.5).length
     const poor = filteredData.filter(e => e.overallRating < 2.5).length
-    const avgRating = total > 0 ? (filteredData.reduce((sum, e) => sum + e.overallRating, 0) / total).toFixed(2) : 0
+    const avgRating = total > 0 ? (filteredData.reduce((sum, e) => sum + (e.overallRating || 0), 0) / total).toFixed(2) : 0
 
     return { total, excellent, good, average, poor, avgRating }
   }
 
   const stats = getStatistics()
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#ed6c02', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        backgroundColor: '#FFC107', // Enforced Yellow Theme
+        color: 'black',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -191,8 +148,8 @@ const Performance = () => {
             Performance Management
           </Typography>
         </Box>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="outlined"
           color="inherit"
           startIcon={<Assessment />}
         >
@@ -264,9 +221,9 @@ const Performance = () => {
               <Grid item xs={12} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">Excellent</Typography>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={(stats.excellent / stats.total) * 100} 
+                  <LinearProgress
+                    variant="determinate"
+                    value={stats.total > 0 ? (stats.excellent / stats.total) * 100 : 0}
                     color="success"
                     sx={{ height: 8, borderRadius: 4, mt: 1 }}
                   />
@@ -276,9 +233,9 @@ const Performance = () => {
               <Grid item xs={12} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">Good</Typography>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={(stats.good / stats.total) * 100} 
+                  <LinearProgress
+                    variant="determinate"
+                    value={stats.total > 0 ? (stats.good / stats.total) * 100 : 0}
                     color="primary"
                     sx={{ height: 8, borderRadius: 4, mt: 1 }}
                   />
@@ -288,9 +245,9 @@ const Performance = () => {
               <Grid item xs={12} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">Average</Typography>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={(stats.average / stats.total) * 100} 
+                  <LinearProgress
+                    variant="determinate"
+                    value={stats.total > 0 ? (stats.average / stats.total) * 100 : 0}
                     color="warning"
                     sx={{ height: 8, borderRadius: 4, mt: 1 }}
                   />
@@ -300,9 +257,9 @@ const Performance = () => {
               <Grid item xs={12} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">Poor</Typography>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={(stats.poor / stats.total) * 100} 
+                  <LinearProgress
+                    variant="determinate"
+                    value={stats.total > 0 ? (stats.poor / stats.total) * 100 : 0}
                     color="error"
                     sx={{ height: 8, borderRadius: 4, mt: 1 }}
                   />
@@ -378,15 +335,15 @@ const Performance = () => {
                 </TableHead>
                 <TableBody>
                   {filteredData.map((employee) => (
-                    <TableRow key={employee.id} hover>
+                    <TableRow key={employee.id || employee._id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar sx={{ bgcolor: 'primary.main' }}>
-                            {getInitials(employee.employeeName)}
+                            {getInitials(employee.employeeName || employee.name || '?')}
                           </Avatar>
                           <Box>
                             <Typography variant="body1" fontWeight="medium">
-                              {employee.employeeName}
+                              {employee.employeeName || employee.name || 'Unknown'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               {employee.employeeId} • {employee.position}
@@ -397,27 +354,27 @@ const Performance = () => {
                       <TableCell>{employee.department}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Rating value={employee.overallRating} precision={0.1} readOnly size="small" />
-                          <Chip 
-                            label={`${employee.overallRating} (${getRatingText(employee.overallRating)})`}
-                            color={getRatingColor(employee.overallRating)}
+                          <Rating value={employee.overallRating || 0} precision={0.1} readOnly size="small" />
+                          <Chip
+                            label={`${employee.overallRating || 0} (${getRatingText(employee.overallRating || 0)})`}
+                            color={getRatingColor(employee.overallRating || 0)}
                             size="small"
                           />
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Rating value={employee.quality} precision={0.1} readOnly size="small" />
+                        <Rating value={employee.quality || 0} precision={0.1} readOnly size="small" />
                       </TableCell>
                       <TableCell>
-                        <Rating value={employee.productivity} precision={0.1} readOnly size="small" />
+                        <Rating value={employee.productivity || 0} precision={0.1} readOnly size="small" />
                       </TableCell>
                       <TableCell>
-                        <Rating value={employee.teamwork} precision={0.1} readOnly size="small" />
+                        <Rating value={employee.teamwork || 0} precision={0.1} readOnly size="small" />
                       </TableCell>
                       <TableCell>{employee.reviewPeriod}</TableCell>
                       <TableCell>
-                        <IconButton 
-                          color="primary" 
+                        <IconButton
+                          color="primary"
                           onClick={() => handleViewDetails(employee)}
                           size="small"
                         >
@@ -426,6 +383,13 @@ const Performance = () => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredData.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        No performance reviews found
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -444,7 +408,7 @@ const Performance = () => {
                   <TextField
                     fullWidth
                     label="Employee Name"
-                    value={selectedEmployee.employeeName}
+                    value={selectedEmployee.employeeName || selectedEmployee.name || ''}
                     disabled
                     margin="normal"
                   />
@@ -453,7 +417,7 @@ const Performance = () => {
                   <TextField
                     fullWidth
                     label="Employee ID"
-                    value={selectedEmployee.employeeId}
+                    value={selectedEmployee.employeeId || ''}
                     disabled
                     margin="normal"
                   />
@@ -462,7 +426,7 @@ const Performance = () => {
                   <TextField
                     fullWidth
                     label="Department"
-                    value={selectedEmployee.department}
+                    value={selectedEmployee.department || ''}
                     disabled
                     margin="normal"
                   />
@@ -471,7 +435,7 @@ const Performance = () => {
                   <TextField
                     fullWidth
                     label="Position"
-                    value={selectedEmployee.position}
+                    value={selectedEmployee.position || ''}
                     disabled
                     margin="normal"
                   />
@@ -480,7 +444,7 @@ const Performance = () => {
                   <TextField
                     fullWidth
                     label="Review Period"
-                    value={selectedEmployee.reviewPeriod}
+                    value={selectedEmployee.reviewPeriod || ''}
                     disabled
                     margin="normal"
                   />
@@ -489,7 +453,7 @@ const Performance = () => {
                   <TextField
                     fullWidth
                     label="Reviewer"
-                    value={selectedEmployee.reviewer}
+                    value={selectedEmployee.reviewer || ''}
                     disabled
                     margin="normal"
                   />
@@ -503,36 +467,36 @@ const Performance = () => {
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2">Overall Rating</Typography>
-                    <Rating value={selectedEmployee.overallRating} precision={0.1} readOnly />
+                    <Rating value={selectedEmployee.overallRating || 0} precision={0.1} readOnly />
                     <Typography variant="caption" color="text.secondary">
-                      {selectedEmployee.overallRating} / 5.0
+                      {selectedEmployee.overallRating || 0} / 5.0
                     </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2">Quality of Work</Typography>
-                    <Rating value={selectedEmployee.quality} precision={0.1} readOnly />
+                    <Rating value={selectedEmployee.quality || 0} precision={0.1} readOnly />
                     <Typography variant="caption" color="text.secondary">
-                      {selectedEmployee.quality} / 5.0
+                      {selectedEmployee.quality || 0} / 5.0
                     </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2">Productivity</Typography>
-                    <Rating value={selectedEmployee.productivity} precision={0.1} readOnly />
+                    <Rating value={selectedEmployee.productivity || 0} precision={0.1} readOnly />
                     <Typography variant="caption" color="text.secondary">
-                      {selectedEmployee.productivity} / 5.0
+                      {selectedEmployee.productivity || 0} / 5.0
                     </Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2">Teamwork</Typography>
-                    <Rating value={selectedEmployee.teamwork} precision={0.1} readOnly />
+                    <Rating value={selectedEmployee.teamwork || 0} precision={0.1} readOnly />
                     <Typography variant="caption" color="text.secondary">
-                      {selectedEmployee.teamwork} / 5.0
+                      {selectedEmployee.teamwork || 0} / 5.0
                     </Typography>
                   </Box>
                 </Grid>
@@ -542,7 +506,7 @@ const Performance = () => {
                 Strengths
               </Typography>
               <Box sx={{ mb: 3 }}>
-                {selectedEmployee.strengths.map((strength, index) => (
+                {selectedEmployee.strengths?.map((strength, index) => (
                   <Chip key={index} label={strength} sx={{ mr: 1, mb: 1 }} color="success" />
                 ))}
               </Box>
@@ -551,7 +515,7 @@ const Performance = () => {
                 Areas for Improvement
               </Typography>
               <Box sx={{ mb: 3 }}>
-                {selectedEmployee.improvements.map((improvement, index) => (
+                {selectedEmployee.improvements?.map((improvement, index) => (
                   <Chip key={index} label={improvement} sx={{ mr: 1, mb: 1 }} color="warning" />
                 ))}
               </Box>
@@ -560,7 +524,7 @@ const Performance = () => {
                 Goals for Next Period
               </Typography>
               <Box>
-                {selectedEmployee.goals.map((goal, index) => (
+                {selectedEmployee.goals?.map((goal, index) => (
                   <Chip key={index} label={goal} sx={{ mr: 1, mb: 1 }} color="primary" />
                 ))}
               </Box>

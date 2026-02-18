@@ -33,9 +33,6 @@ import {
   Edit,
   Delete,
   Person,
-  Email,
-  Phone,
-  Business,
   Visibility
 } from '@mui/icons-material'
 import { mockUsers } from '../../services/mockData'

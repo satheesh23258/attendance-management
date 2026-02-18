@@ -154,6 +154,27 @@ const HRDashboard = () => {
 
   return (
     <DashboardLayout title="HR Dashboard">
+      {/* Header with yellow theme */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #FFC107 0%, #FFB300 100%)',
+          color: 'black',
+          p: 3,
+          borderRadius: 2,
+          mb: 3
+        }}
+      >
+        <Typography variant="h4" gutterBottom sx={{ color: 'black', fontWeight: 700 }}>
+          HR Dashboard
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'rgba(0,0,0,0.8)' }}>
+          Welcome back! Here's an overview of your human resources metrics.
+        </Typography>
+      </Box>
+
+      {/* Quick Actions */}
+      <QuickActions role="hr" />
+
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statCards.map((card, index) => (
@@ -184,7 +205,7 @@ const HRDashboard = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  <Avatar sx={{ bgcolor: colors.primary.main }}>
+                  <Avatar sx={{ bgcolor: '#FFC107', color: 'black' }}>
                     {card.icon}
                   </Avatar>
                 </Box>
@@ -193,9 +214,6 @@ const HRDashboard = () => {
           </Grid>
         ))}
       </Grid>
-
-      {/* Quick Actions */}
-      <QuickActions role="hr" />
 
       {/* Top Performers and Attendance */}
       <Grid container spacing={3}>
@@ -209,7 +227,7 @@ const HRDashboard = () => {
                 {topPerformers.map((performer, index) => (
                   <ListItem key={performer.name}>
                     <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: '#1976d2' }}>
+                      <Avatar sx={{ bgcolor: '#FFC107', color: 'black' }}>
                         {index + 1}
                       </Avatar>
                     </ListItemAvatar>
@@ -224,7 +242,14 @@ const HRDashboard = () => {
                       <LinearProgress
                         variant="determinate"
                         value={performer.score}
-                        sx={{ width: 100, mt: 1 }}
+                        sx={{
+                          width: 100,
+                          mt: 1,
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: '#FFC107'
+                          },
+                          backgroundColor: 'rgba(255, 193, 7, 0.2)'
+                        }}
                       />
                     </Box>
                   </ListItem>

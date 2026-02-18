@@ -84,7 +84,7 @@ const MyLocation = () => {
             address: `Current Location (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`
           }
           setCurrentLocation(newPosition)
-          
+
           // Add to history
           const newRecord = {
             id: locationHistory.length + 1,
@@ -110,7 +110,7 @@ const MyLocation = () => {
         address: newAddress
       }
       setCurrentLocation(updatedLocation)
-      
+
       // Add to history
       const newRecord = {
         id: locationHistory.length + 1,
@@ -155,25 +155,37 @@ const MyLocation = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#1976d2', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            My Location
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              My Location
+            </Typography>
+            <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+              Track and update your current location
+            </Typography>
+          </Box>
         </Box>
-        <Typography variant="h6">
-          Employee Dashboard
-        </Typography>
+        <Chip
+          label="Employee Portal"
+          sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600 }}
+        />
       </Box>
 
       {/* Main Content */}
@@ -204,12 +216,12 @@ const MyLocation = () => {
           <Grid item xs={12} sm={6}>
             <Card sx={{ textAlign: 'center', height: '100%' }}>
               <CardContent sx={{ py: 3 }}>
-                <Avatar sx={{ 
-                  bgcolor: 'primary.main', 
-                  mx: 'auto', 
-                  mb: 2, 
-                  width: 56, 
-                  height: 56 
+                <Avatar sx={{
+                  bgcolor: 'primary.main',
+                  mx: 'auto',
+                  mb: 2,
+                  width: 56,
+                  height: 56
                 }}>
                   <MyLocationIcon sx={{ fontSize: 28 }} />
                 </Avatar>
@@ -219,8 +231,8 @@ const MyLocation = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Use GPS to get your current location
                 </Typography>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   fullWidth
                   onClick={handleGetCurrentLocation}
                 >
@@ -233,12 +245,12 @@ const MyLocation = () => {
           <Grid item xs={12} sm={6}>
             <Card sx={{ textAlign: 'center', height: '100%' }}>
               <CardContent sx={{ py: 3 }}>
-                <Avatar sx={{ 
-                  bgcolor: 'warning.main', 
-                  mx: 'auto', 
-                  mb: 2, 
-                  width: 56, 
-                  height: 56 
+                <Avatar sx={{
+                  bgcolor: 'warning.main',
+                  mx: 'auto',
+                  mb: 2,
+                  width: 56,
+                  height: 56
                 }}>
                   <EditLocation sx={{ fontSize: 28 }} />
                 </Avatar>
@@ -248,8 +260,8 @@ const MyLocation = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Manually update your location
                 </Typography>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   color="warning"
                   fullWidth
                   onClick={() => setOpenUpdateDialog(true)}
@@ -314,12 +326,12 @@ const MyLocation = () => {
                   <ListItemIcon>
                     {getLocationIcon(record.type)}
                   </ListItemIcon>
-                  <ListItemText 
+                  <ListItemText
                     primary={record.address}
                     secondary={`${record.date} at ${record.time}`}
                   />
-                  <Chip 
-                    label={record.type.replace('-', ' ')} 
+                  <Chip
+                    label={record.type.replace('-', ' ')}
                     color={getLocationTypeColor(record.type)}
                     size="small"
                   />
@@ -350,7 +362,7 @@ const MyLocation = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenUpdateDialog(false)}>Cancel</Button>
-          <Button 
+          <Button
             onClick={handleUpdateLocation}
             variant="contained"
             disabled={!newAddress.trim()}

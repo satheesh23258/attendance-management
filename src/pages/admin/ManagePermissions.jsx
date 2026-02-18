@@ -84,11 +84,34 @@ const ManagePermissions = () => {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-                    <ArrowBack />
-                </IconButton>
-                <Typography variant="h4">Manage Hybrid Permissions</Typography>
+            <Box sx={{
+                background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
+                color: 'white',
+                p: 3,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 3,
+                borderRadius: '0 0 16px 16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <IconButton
+                        color="inherit"
+                        onClick={() => navigate(-1)}
+                        sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+                    >
+                        <ArrowBack />
+                    </IconButton>
+                    <Box>
+                        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                            Hybrid Permissions
+                        </Typography>
+                        <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                            Manage dual Role-HR access for employees
+                        </Typography>
+                    </Box>
+                </Box>
             </Box>
 
             <Alert severity="info" sx={{ mb: 3 }}>

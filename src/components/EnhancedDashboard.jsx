@@ -20,10 +20,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  FormControl,
-  Select,
-  MenuItem
+  DialogActions
 } from '@mui/material'
 import {
   Notifications,
@@ -37,7 +34,8 @@ import {
   Assessment,
   Refresh,
   Download,
-  ArrowBack
+  ArrowBack,
+  FilterList
 } from '@mui/icons-material'
 import { useParams } from 'react-router-dom'
 
@@ -45,6 +43,7 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
   const { role } = useParams()
   const [anchorEl, setAnchorEl] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [openNotificationDialog, setOpenNotificationDialog] = useState(false)
 
   // Get role from props or URL params
   const currentRole = userRole || role || 'employee'
@@ -84,6 +83,7 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
   }
 
   const headerTextColor = currentRole === 'hr' ? 'black' : 'white'
+
   const getRoleIcon = () => {
     switch (currentRole) {
       case 'admin': return '👨‍💼'
@@ -116,15 +116,21 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
     </Card>
   )
 
+  const notifications = [
+    { id: 1, title: 'New task assigned', message: 'You have a new task waiting', time: '10 min ago', read: false },
+    { id: 2, title: 'Team meeting', message: 'Meeting starts in 30 minutes', time: '30 min ago', read: false },
+    { id: 3, title: 'Report generated', message: 'Weekly report is ready', time: '2 hours ago', read: true },
+  ]
+
   // Show loading state
   if (loading) {
     return (
       <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-        <Box sx={{ 
-            backgroundColor: getRoleColor(), 
-            color: headerTextColor, 
-          p: 3, 
-          display: 'flex', 
+        <Box sx={{
+          backgroundColor: getRoleColor(),
+          color: headerTextColor,
+          p: 3,
+          display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
@@ -158,11 +164,11 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-          backgroundColor: getRoleColor(), 
-          color: headerTextColor, 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        backgroundColor: getRoleColor(),
+        color: headerTextColor,
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -182,11 +188,11 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
             </Typography>
           </Box>
         </Box>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Notifications */}
-          <IconButton color="inherit">
-            <Badge badgeContent={3} color="error">
+          <IconButton color="inherit" onClick={() => setOpenNotificationDialog(true)}>
+            <Badge badgeContent={notifications.filter(n => !n.read).length} color="error">
               <Notifications />
             </Badge>
           </IconButton>
@@ -202,7 +208,7 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
               {currentUserName.charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
-          
+
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
@@ -229,47 +235,239 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
         <Typography variant="h5" gutterBottom>
           Dashboard Statistics
         </Typography>
-        
+
         <Grid container spacing={3}>
           {currentRole === 'admin' && (
             <>
               <Grid item xs={12} sm={6} md={3}>
-                <StatCard 
-                  title="Total Employees" 
-                  value="156" 
+                <StatCard
+                  title="Total Employees"
+                  value="156"
                   subtitle="Active workforce"
                   icon="👥"
                   color="#d32f2f"
-                        <>
-                          <Grid item xs={6}>
-                            <Button variant="outlined" fullWidth startIcon={<Schedule />}>
-                              Check In/Out
-                            </Button>
-                          </Grid>
-                          <Grid item xs={6}>
-                            <Button variant="outlined" fullWidth startIcon={<LocationOn />}>
-                              My Location
-                            </Button>
-                          </Grid>
-                        </>
-                      )}
-                      <Grid item xs={6}>
-                        <Button variant="outlined" fullWidth startIcon={<Download />}>
-                          Export Data
-                        </Button>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Button variant="outlined" fullWidth startIcon={<FilterList />}>
-                          Advanced Filters
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
+                />
               </Grid>
-            </Grid>
-          </>
-        )}
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="System Health"
+                  value="98%"
+                  subtitle="All systems operational"
+                  icon="💻"
+                  color="#4caf50"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Pending Requests"
+                  value="12"
+                  subtitle="Need attention"
+                  icon="📋"
+                  color="#ff9800"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="New Users"
+                  value="8"
+                  subtitle="This month"
+                  icon="👤"
+                  color="#2196f3"
+                />
+              </Grid>
+            </>
+          )}
+
+          {currentRole === 'hr' && (
+            <>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Total Employees"
+                  value="156"
+                  subtitle="Active workforce"
+                  icon="👥"
+                  color="#ff9800"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Present Today"
+                  value="138"
+                  subtitle="88.5% attendance"
+                  icon="✅"
+                  color="#4caf50"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="On Leave"
+                  value="12"
+                  subtitle="Currently absent"
+                  icon="🏖️"
+                  color="#ff9800"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Avg Satisfaction"
+                  value="4.2"
+                  subtitle="Out of 5.0"
+                  icon="😊"
+                  color="#9c27b0"
+                />
+              </Grid>
+            </>
+          )}
+
+          {currentRole === 'employee' && (
+            <>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Tasks Completed"
+                  value="8"
+                  subtitle="This week"
+                  icon="✅"
+                  color="#4caf50"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Tasks Pending"
+                  value="3"
+                  subtitle="Need attention"
+                  icon="⏳"
+                  color="#ff9800"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Attendance Rate"
+                  value="95%"
+                  subtitle="This month"
+                  icon="📅"
+                  color="#2196f3"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard
+                  title="Performance Score"
+                  value="4.5"
+                  subtitle="Out of 5.0"
+                  icon="⭐"
+                  color="#9c27b0"
+                />
+              </Grid>
+            </>
+          )}
+        </Grid>
+
+        {/* Quick Actions */}
+        <Grid container spacing={3} sx={{ mt: 3 }}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TrendingUp />
+                  Recent Activities
+                </Typography>
+                <List>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemIcon>
+                      <Typography variant="h4">📝</Typography>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="New task assigned"
+                      secondary="2 minutes ago"
+                    />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemIcon>
+                      <Typography variant="h4">✅</Typography>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Successfully checked in"
+                      secondary="2 hours ago"
+                    />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemIcon>
+                      <Typography variant="h4">🔧</Typography>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Service request resolved"
+                      secondary="3 hours ago"
+                    />
+                  </ListItem>
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Assessment />
+                  Quick Actions
+                </Typography>
+                <Grid container spacing={2}>
+                  {currentRole === 'employee' && (
+                    <>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" fullWidth startIcon={<Schedule />}>
+                          Check In/Out
+                        </Button>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" fullWidth startIcon={<LocationOn />}>
+                          My Location
+                        </Button>
+                      </Grid>
+                    </>
+                  )}
+                  {currentRole === 'hr' && (
+                    <>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" fullWidth startIcon={<Assignment />}>
+                          View Reports
+                        </Button>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" fullWidth startIcon={<People />}>
+                          Employee Records
+                        </Button>
+                      </Grid>
+                    </>
+                  )}
+                  {currentRole === 'admin' && (
+                    <>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" fullWidth startIcon={<People />}>
+                          Manage Users
+                        </Button>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Button variant="outlined" fullWidth startIcon={<Settings />}>
+                          System Settings
+                        </Button>
+                      </Grid>
+                    </>
+                  )}
+                  <Grid item xs={6}>
+                    <Button variant="outlined" fullWidth startIcon={<Download />}>
+                      Export Data
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Button variant="outlined" fullWidth startIcon={<FilterList />}>
+                      Advanced Filters
+                    </Button>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       </Box>
 
       {/* Notifications Dialog */}

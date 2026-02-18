@@ -42,7 +42,6 @@ const Dashboard = ({ userRole = 'employee' }) => {
   }
 
   const headerTextColor = userRole === 'hr' ? 'black' : 'white'
-
   const handleLogout = () => {
     window.location.href = '/login'
   }
@@ -50,11 +49,11 @@ const Dashboard = ({ userRole = 'employee' }) => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: getRoleColor(), 
-        color: headerTextColor, 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        backgroundColor: getRoleColor(),
+        color: headerTextColor,
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -68,9 +67,9 @@ const Dashboard = ({ userRole = 'employee' }) => {
           <Typography variant="h6">
             {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
           </Typography>
-          <Button 
-            variant="outlined" 
-            color="inherit" 
+          <Button
+            variant="outlined"
+            color="inherit"
             startIcon={<Logout />}
             onClick={handleLogout}
           >
@@ -84,7 +83,7 @@ const Dashboard = ({ userRole = 'employee' }) => {
         <Typography variant="h4" gutterBottom>
           Welcome to {getWelcomeMessage()}
         </Typography>
-        
+
         <Typography variant="body1" color="text.secondary" mb={4}>
           This is your personalized dashboard. You can manage your activities from here.
         </Typography>

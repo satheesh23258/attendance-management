@@ -33,14 +33,10 @@ import {
   Add,
   Edit,
   Delete,
-  Person,
-  Email,
-  Phone,
-  Business,
   Visibility,
-  Security
+  Star,
+  StarBorder
 } from '@mui/icons-material'
-import { Star, StarBorder } from '@mui/icons-material'
 
 const UserManagement = () => {
   const { user: currentUser } = useAuth()
@@ -233,27 +229,46 @@ const UserManagement = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#d32f2f', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            User Management
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              User Management
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Manage system access and user roles
+            </Typography>
+          </Box>
         </Box>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="contained"
           color="inherit"
           startIcon={<Add />}
           onClick={handleAddUser}
+          sx={{
+            bgcolor: 'white',
+            color: '#d32f2f',
+            fontWeight: 600,
+            '&:hover': { bgcolor: '#f5f5f5' },
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
         >
           Add User
         </Button>
@@ -388,7 +403,7 @@ const UserManagement = () => {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip 
+                        <Chip
                           label={user.role.toUpperCase()}
                           color={getRoleColor(user.role)}
                           size="small"
@@ -396,7 +411,7 @@ const UserManagement = () => {
                       </TableCell>
                       <TableCell>{user.department}</TableCell>
                       <TableCell>
-                        <Chip 
+                        <Chip
                           label={user.status}
                           color={getStatusColor(user.status)}
                           size="small"
@@ -405,22 +420,22 @@ const UserManagement = () => {
                       <TableCell>{user.lastLogin}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', gap: 1 }}>
-                          <IconButton 
-                            color="primary" 
+                          <IconButton
+                            color="primary"
                             onClick={() => handleViewUser(user)}
                             size="small"
                           >
                             <Visibility />
                           </IconButton>
-                          <IconButton 
-                            color="info" 
+                          <IconButton
+                            color="info"
                             onClick={() => handleEditUser(user)}
                             size="small"
                           >
                             <Edit />
                           </IconButton>
-                          <IconButton 
-                            color="error" 
+                          <IconButton
+                            color="error"
                             onClick={() => handleDeleteUser(user)}
                             size="small"
                           >
@@ -450,8 +465,8 @@ const UserManagement = () => {
       {/* User Details Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          {dialogMode === 'view' ? 'User Details' : 
-           dialogMode === 'edit' ? 'Edit User' : 'Add New User'}
+          {dialogMode === 'view' ? 'User Details' :
+            dialogMode === 'edit' ? 'Edit User' : 'Add New User'}
         </DialogTitle>
         <DialogContent>
           {selectedUser && (
@@ -461,7 +476,7 @@ const UserManagement = () => {
                   fullWidth
                   label="Username"
                   value={selectedUser.username}
-                  onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, username: e.target.value })}
                   disabled={dialogMode === 'view'}
                   margin="normal"
                 />
@@ -471,7 +486,7 @@ const UserManagement = () => {
                   fullWidth
                   label="Email"
                   value={selectedUser.email}
-                  onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
                   disabled={dialogMode === 'view'}
                   margin="normal"
                   type="email"
@@ -482,7 +497,7 @@ const UserManagement = () => {
                   <InputLabel>Role</InputLabel>
                   <Select
                     value={selectedUser.role}
-                    onChange={(e) => setSelectedUser({...selectedUser, role: e.target.value})}
+                    onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}
                     label="Role"
                     disabled={dialogMode === 'view'}
                   >
@@ -497,7 +512,7 @@ const UserManagement = () => {
                   <InputLabel>Status</InputLabel>
                   <Select
                     value={selectedUser.status}
-                    onChange={(e) => setSelectedUser({...selectedUser, status: e.target.value})}
+                    onChange={(e) => setSelectedUser({ ...selectedUser, status: e.target.value })}
                     label="Status"
                     disabled={dialogMode === 'view'}
                   >
@@ -512,7 +527,7 @@ const UserManagement = () => {
                   fullWidth
                   label="Department"
                   value={selectedUser.department}
-                  onChange={(e) => setSelectedUser({...selectedUser, department: e.target.value})}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, department: e.target.value })}
                   disabled={dialogMode === 'view'}
                   margin="normal"
                 />
@@ -522,7 +537,7 @@ const UserManagement = () => {
                   fullWidth
                   label="Phone"
                   value={selectedUser.phone}
-                  onChange={(e) => setSelectedUser({...selectedUser, phone: e.target.value})}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, phone: e.target.value })}
                   disabled={dialogMode === 'view'}
                   margin="normal"
                 />

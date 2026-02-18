@@ -37,9 +37,11 @@ import {
 import { useTheme } from '../../contexts/ThemeContext'
 import { employeeAPI } from '../../services/api'
 import { toast } from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 const ManageEmployees = () => {
   const { colors } = useTheme()
+  const navigate = useNavigate()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -77,8 +79,7 @@ const ManageEmployees = () => {
   const statuses = ['Active', 'On Leave', 'Inactive']
 
   const handleBack = () => {
-    // Navigate back or to a specific dashboard
-    window.history.back()
+    navigate(-1)
   }
 
   const handleAdd = () => {
@@ -90,11 +91,7 @@ const ManageEmployees = () => {
       department: '',
       position: '',
       status: 'Active',
-      employeeId: '' // Let backend generate or user input? Assuming user input or backend logic.
-      // Usually backend generates, but sometimes user needs to input. 
-      // Based on previous code, it was generating mock ID. 
-      // Let's assume backend handles ID generation or we provide it.
-      // If the backend requires it, we'd need a field.
+      employeeId: ''
     })
     setOpenDialog(true)
   }
@@ -141,9 +138,6 @@ const ManageEmployees = () => {
         toast.success('Employee updated successfully')
       } else {
         // Add new employee
-        // Note: Backend likely requires password for new users if they are also users.
-        // Or maybe this is just the employee record.
-        // Assuming the API handles it or default password.
         await employeeAPI.create(formData)
         toast.success('Employee added successfully')
       }
@@ -179,27 +173,45 @@ const ManageEmployees = () => {
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <Box sx={{
-        backgroundColor: colors.primary.main,
+        background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
         color: 'white',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            Manage Employees
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Manage Employees
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              View and manage organization staff records
+            </Typography>
+          </Box>
         </Box>
         <Button
           variant="contained"
           color="inherit"
           startIcon={<Add />}
           onClick={handleAdd}
-          sx={{ color: colors.primary.main, bgcolor: 'white', '&:hover': { bgcolor: '#f5f5f5' } }}
+          sx={{
+            bgcolor: 'white',
+            color: '#d32f2f',
+            fontWeight: 600,
+            '&:hover': { bgcolor: '#f5f5f5' },
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
         >
           Add Employee
         </Button>
@@ -303,7 +315,7 @@ const ManageEmployees = () => {
                       <TableRow key={employee.id || employee._id} hover>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar sx={{ bgcolor: colors.primary.main }} src={employee.avatar}>
+                            <Avatar sx={{ bgcolor: '#d32f2f' }} src={employee.avatar}>
                               {getInitials(employee.name)}
                             </Avatar>
                             <Box>

@@ -33,7 +33,6 @@ import {
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { attendanceAPI, employeeAPI, locationAPI } from '../../services/api'
-// import { mockLocations, mockUsers } from '../../services/mockData'
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from 'react-hot-toast'
 
@@ -255,22 +254,37 @@ const LiveLocation = () => {
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <Box sx={{
-        backgroundColor: '#d32f2f',
-        color: 'white',
+        background: user?.role === 'admin'
+          ? 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)'
+          : '#FFC107',
+        color: user?.role === 'admin' ? 'white' : 'black',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={() => navigate(-1)} title="Go back">
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            Live Location Tracking
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Live Location Tracking
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Monitor and track organization staff in real-time
+            </Typography>
+          </Box>
         </Box>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton color="inherit" onClick={handleRefresh} title="Refresh">
             <Refresh />
           </IconButton>
@@ -315,6 +329,14 @@ const LiveLocation = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Button
                 variant="outlined"
+                sx={{
+                  color: user?.role === 'admin' ? '#d32f2f' : 'primary.main',
+                  borderColor: user?.role === 'admin' ? '#d32f2f' : 'primary.main',
+                  '&:hover': {
+                    borderColor: user?.role === 'admin' ? '#b71c1c' : 'primary.dark',
+                    bgcolor: user?.role === 'admin' ? 'rgba(211, 47, 47, 0.04)' : 'rgba(25, 118, 210, 0.04)'
+                  }
+                }}
                 startIcon={<Timeline />}
                 onClick={() => console.log('View route history')}
                 fullWidth
@@ -423,7 +445,7 @@ const LiveLocation = () => {
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Box textAlign="center">
-                    <Typography variant="h4" color="primary">
+                    <Typography variant="h4" sx={{ color: user?.role === 'admin' ? '#d32f2f' : 'primary.main' }}>
                       {filteredLocations.filter(l => l.isActive).length}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -433,7 +455,7 @@ const LiveLocation = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Box textAlign="center">
-                    <Typography variant="h4" color="secondary">
+                    <Typography variant="h4" sx={{ color: user?.role === 'admin' ? '#f44336' : 'secondary.main' }}>
                       {filteredLocations.length}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">

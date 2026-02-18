@@ -40,13 +40,16 @@ import {
   Schedule,
   Edit,
   Visibility,
-  Group
+  Group,
+  ArrowBack
 } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { attendanceAPI, employeeAPI } from '../../services/api'
 import { toast } from 'react-hot-toast'
 
 const HRAttendance = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [attendanceData, setAttendanceData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -196,6 +199,10 @@ const HRAttendance = () => {
     setDetailsDialog(true)
   }
 
+  const handleBack = () => {
+    navigate(-1)
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -207,12 +214,14 @@ const HRAttendance = () => {
     )
   }
 
+  // existing useEffect...
+
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5', p: 3 }}>
       {/* Header */}
       <Box sx={{
-        backgroundColor: '#1976d2',
-        color: 'white',
+        backgroundColor: '#FFC107', // Updated to match theme
+        color: 'black', // Updated text color for contrast
         p: 3,
         borderRadius: 2,
         mb: 3,
@@ -220,9 +229,14 @@ const HRAttendance = () => {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <Typography variant="h4">
-          Employee Attendance Management
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton color="inherit" onClick={handleBack}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4">
+            Employee Attendance Management
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Tooltip title="Refresh Data">
             <IconButton color="inherit" onClick={refreshData}>

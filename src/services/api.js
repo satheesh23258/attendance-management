@@ -123,5 +123,4 @@ export const leaveAPI = {
   getAll: () => api.get('/leaves'),
   updateStatus: (id, data) => api.put(`/leaves/${id}/status`, data),
 }
-
 export default api

@@ -47,13 +47,12 @@ const MainLayout = () => {
   const themeColor = user?.role === 'employee'
     ? '#2f80ed'
     : user?.role === 'admin'
-    ? '#d32f2f'
-    : user?.role === 'hr'
-    ? '#f2c94c'
-    : undefined
+      ? '#d32f2f'
+      : user?.role === 'hr'
+        ? '#f2c94c'
+        : undefined
 
   const themeTextColor = user?.role === 'hr' ? 'black' : 'white'
-
   const handleDrawerToggle = () => {
     setOpen(!open)
   }
@@ -95,7 +94,6 @@ const MainLayout = () => {
     if (user?.hybrid) {
       items.push({ text: 'Hybrid Dashboard', icon: <Dashboard />, path: '/dashboard/hybrid' })
     }
-
     if (user?.role === 'admin') {
       items.push(
         { text: 'Employees', icon: <People />, path: '/admin/employees' },
@@ -151,7 +149,7 @@ const MainLayout = () => {
           >
             {open ? <ChevronLeft /> : <MenuIcon />}
           </IconButton>
-          
+
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Employee Management System
           </Typography>

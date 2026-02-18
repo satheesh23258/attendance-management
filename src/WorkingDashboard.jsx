@@ -34,86 +34,85 @@ const WorkingDashboard = () => {
   }
 
   const headerTextColor = userRole === 'hr' ? 'black' : 'white'
-
   const getRoleFeatures = () => {
     switch (userRole) {
       case 'admin':
         return [
-          { 
-            icon: '👥', 
-            title: 'Manage Employees', 
+          {
+            icon: '👥',
+            title: 'Manage Employees',
             desc: 'Add, edit, delete staff',
             url: '/admin/manage-employees'
           },
-          { 
-            icon: '📊', 
-            title: 'System Reports', 
+          {
+            icon: '📊',
+            title: 'System Reports',
             desc: 'View all analytics',
             url: '/admin/system-reports'
           },
-          { 
-            icon: '⚙️', 
-            title: 'System Settings', 
+          {
+            icon: '⚙️',
+            title: 'System Settings',
             desc: 'Configure system',
             url: '/admin/system-settings'
           },
-          { 
-            icon: '🔐', 
-            title: 'User Management', 
+          {
+            icon: '🔐',
+            title: 'User Management',
             desc: 'Manage all users',
             url: '/admin/user-management'
           }
         ]
       case 'hr':
         return [
-          { 
-            icon: '👥', 
-            title: 'Employee Records', 
+          {
+            icon: '👥',
+            title: 'Employee Records',
             desc: 'View staff details',
             url: '/hr/employee-records'
           },
-          { 
-            icon: '📊', 
-            title: 'Attendance Reports', 
+          {
+            icon: '📊',
+            title: 'Attendance Reports',
             desc: 'Track attendance',
             url: '/hr/attendance-reports'
           },
-          { 
-            icon: '💼', 
-            title: 'Performance', 
+          {
+            icon: '💼',
+            title: 'Performance',
             desc: 'Employee performance',
             url: '/hr/performance'
           },
-          { 
-            icon: '📈', 
-            title: 'Analytics', 
+          {
+            icon: '📈',
+            title: 'Analytics',
             desc: 'HR analytics',
             url: '/hr/analytics'
           }
         ]
       default:
         return [
-          { 
-            icon: '⏰', 
-            title: 'Check In/Out', 
+          {
+            icon: '⏰',
+            title: 'Check In/Out',
             desc: 'Mark attendance',
             url: '/employee/checkinout'
           },
-          { 
-            icon: '📋', 
-            title: 'My Tasks', 
+          {
+            icon: '📋',
+            title: 'My Tasks',
             desc: 'View assignments',
             url: '/employee/mytasks'
           },
-          { 
-            icon: '📍', 
-            title: 'My Location', 
+          {
+            icon: '📍',
+            title: 'My Location',
             desc: 'Location tracking',
             url: '/employee/mylocation'
           },
-          { 
-            icon: '👤', 
-            title: 'My Profile', 
+          {
+            icon: '👤',
+            title: 'My Profile',
             desc: 'Personal details',
             url: '/employee/myprofile'
           }
@@ -132,11 +131,11 @@ const WorkingDashboard = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <div style={{ 
-        backgroundColor: getRoleColor(), 
-        color: headerTextColor, 
-        padding: '20px', 
-        display: 'flex', 
+      <div style={{
+        backgroundColor: getRoleColor(),
+        color: headerTextColor,
+        padding: '20px',
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -145,12 +144,12 @@ const WorkingDashboard = () => {
           <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
             {userRole.toUpperCase()} Dashboard
           </span>
-            <button 
-            style={{ 
-              padding: '10px 20px', 
-              background: 'white', 
-                color: getRoleColor(), 
-              border: 'none', 
+          <button
+            style={{
+              padding: '10px 20px',
+              background: 'white',
+              color: getRoleColor(),
+              border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
               fontWeight: 'bold'
@@ -168,20 +167,20 @@ const WorkingDashboard = () => {
         <p style={{ color: '#666', marginBottom: '30px' }}>
           🎉 Login successful! You are logged in as <strong>{userRole}</strong>.
         </p>
-        
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
           gap: '20px',
           marginBottom: '30px'
         }}>
           {getRoleFeatures().map((feature, index) => (
-            <div 
-              key={index} 
-              style={{ 
-                background: 'white', 
-                padding: '20px', 
-                borderRadius: '8px', 
+            <div
+              key={index}
+              style={{
+                background: 'white',
+                padding: '20px',
+                borderRadius: '8px',
                 textAlign: 'center',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 cursor: 'pointer',
@@ -206,9 +205,9 @@ const WorkingDashboard = () => {
           ))}
         </div>
 
-        <div style={{ 
-          background: 'white', 
-          padding: '20px', 
+        <div style={{
+          background: 'white',
+          padding: '20px',
           borderRadius: '8px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>

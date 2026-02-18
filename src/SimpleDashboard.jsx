@@ -41,81 +41,81 @@ const SimpleDashboard = () => {
     switch (userRole) {
       case 'admin':
         return [
-          { 
-            icon: '👥', 
-            title: 'Manage Employees', 
+          {
+            icon: '👥',
+            title: 'Manage Employees',
             desc: 'Add, edit, delete staff',
             path: '/admin/manage-employees'
           },
-          { 
-            icon: '📊', 
-            title: 'System Reports', 
+          {
+            icon: '📊',
+            title: 'System Reports',
             desc: 'View all analytics',
             path: '/admin/reports'
           },
-          { 
-            icon: '⚙️', 
-            title: 'System Settings', 
+          {
+            icon: '⚙️',
+            title: 'System Settings',
             desc: 'Configure system',
             path: '/admin/settings'
           },
-          { 
-            icon: '🔐', 
-            title: 'User Management', 
+          {
+            icon: '🔐',
+            title: 'User Management',
             desc: 'Manage all users',
             path: '/admin/users'
           }
         ]
       case 'hr':
         return [
-          { 
-            icon: '👥', 
-            title: 'Employee Records', 
+          {
+            icon: '👥',
+            title: 'Employee Records',
             desc: 'View staff details',
             path: '/hr/employee-records'
           },
-          { 
-            icon: '📊', 
-            title: 'Attendance Reports', 
+          {
+            icon: '📊',
+            title: 'Attendance Reports',
             desc: 'Track attendance',
             path: '/hr/attendance-reports'
           },
-          { 
-            icon: '💼', 
-            title: 'Performance', 
+          {
+            icon: '💼',
+            title: 'Performance',
             desc: 'Employee performance',
             path: '/hr/performance'
           },
-          { 
-            icon: '📈', 
-            title: 'Analytics', 
+          {
+            icon: '📈',
+            title: 'Analytics',
             desc: 'HR analytics',
             path: '/hr/analytics'
           }
         ]
       default:
         return [
-          { 
-            icon: '⏰', 
-            title: 'Check In/Out', 
+          {
+            icon: '⏰',
+            title: 'Check In/Out',
             desc: 'Mark attendance',
             path: '/employee/checkinout'
           },
-          { 
-            icon: '📋', 
-            title: 'My Tasks', 
+          {
+            icon: '📋',
+            title: 'My Tasks',
             desc: 'View assignments',
             path: '/employee/mytasks'
           },
-          { 
-            icon: '📍', 
-            title: 'My Location', 
+          {
+            icon: '📍',
+            title: 'My Location',
             desc: 'Location tracking',
             path: '/employee/mylocation'
           },
-          { 
-            icon: '👤', 
-            title: 'My Profile', 
+          {
+            icon: '👤',
+            title: 'My Profile',
             desc: 'Personal details',
             path: '/employee/myprofile'
           }
@@ -130,11 +130,11 @@ const SimpleDashboard = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <div style={{ 
-        backgroundColor: getRoleColor(), 
-        color: headerTextColor, 
-        padding: '20px', 
-        display: 'flex', 
+      <div style={{
+        backgroundColor: getRoleColor(),
+        color: headerTextColor,
+        padding: '20px',
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -143,12 +143,12 @@ const SimpleDashboard = () => {
           <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
             {userRole.toUpperCase()} Dashboard
           </span>
-          <button 
-            style={{ 
-              padding: '10px 20px', 
-              background: 'white', 
-              color: getRoleColor(), 
-              border: 'none', 
+          <button
+            style={{
+              padding: '10px 20px',
+              background: 'white',
+              color: getRoleColor(),
+              border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
               fontWeight: 'bold'
@@ -166,20 +166,20 @@ const SimpleDashboard = () => {
         <p style={{ color: '#666', marginBottom: '30px' }}>
           🎉 Login successful! You are logged in as <strong>{userRole}</strong>.
         </p>
-        
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
           gap: '20px',
           marginBottom: '30px'
         }}>
           {getRoleFeatures().map((feature, index) => (
-            <div 
-              key={index} 
-              style={{ 
-                background: 'white', 
-                padding: '20px', 
-                borderRadius: '8px', 
+            <div
+              key={index}
+              style={{
+                background: 'white',
+                padding: '20px',
+                borderRadius: '8px',
                 textAlign: 'center',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 cursor: 'pointer',
@@ -204,9 +204,9 @@ const SimpleDashboard = () => {
           ))}
         </div>
 
-        <div style={{ 
-          background: 'white', 
-          padding: '20px', 
+        <div style={{
+          background: 'white',
+          padding: '20px',
           borderRadius: '8px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>

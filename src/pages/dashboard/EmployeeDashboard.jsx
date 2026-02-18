@@ -155,15 +155,33 @@ const EmployeeDashboard = () => {
 
   return (
     <DashboardLayout title="Employee Dashboard">
+      {/* Header with blue theme */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+          color: 'white',
+          p: 3,
+          borderRadius: 2,
+          mb: 3
+        }}
+      >
+        <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 700 }}>
+          Employee Dashboard
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+          Welcome back! Here's an overview of your work and attendance.
+        </Typography>
+      </Box>
+
+      {/* Quick Actions Header */}
+      <QuickActions role="employee" />
+
       {/* Welcome Alert */}
-      {!todayAttendance && (
+      {!todayAttendance?.checkIn && (
         <Alert severity="info" sx={{ mb: 3 }}>
           Don't forget to check in when you arrive at work!
         </Alert>
       )}
-
-      {/* Quick Actions Header */}
-      <QuickActions role="employee" />
 
       {/* Quick Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -186,7 +204,7 @@ const EmployeeDashboard = () => {
                   {isCheckedIn ? <CheckCircle /> : <Schedule />}
                 </Avatar>
               </Box>
-              
+
               {todayAttendance ? (
                 <Box>
                   <Typography variant="body2" color="textSecondary">
@@ -203,7 +221,7 @@ const EmployeeDashboard = () => {
                   Not checked in yet
                 </Typography>
               )}
-              
+
               <Box mt={2}>
                 {!isCheckedIn ? (
                   <Button
@@ -250,7 +268,7 @@ const EmployeeDashboard = () => {
                   <Assignment />
                 </Avatar>
               </Box>
-              
+
               <Box mb={2}>
                 <Typography variant="body2" color="textSecondary">
                   Pending: {myServices.filter(s => s.status === 'pending').length}
@@ -259,7 +277,7 @@ const EmployeeDashboard = () => {
                   Completed: {myServices.filter(s => s.status === 'completed').length}
                 </Typography>
               </Box>
-              
+
               <Button
                 variant="contained"
                 fullWidth

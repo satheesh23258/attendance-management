@@ -43,7 +43,6 @@ import {
 } from '@mui/icons-material'
 import { useAuth } from '../../contexts/AuthContext'
 import { serviceAPI, employeeAPI } from '../../services/api'
-// import { mockServices, mockUsers } from '../../services/mockData' // Removed mock data
 
 const ServiceList = () => {
   const navigate = useNavigate()
@@ -60,10 +59,21 @@ const ServiceList = () => {
   // Store employees for name lookup
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
+
+  const currentPath = window.location.pathname
+  const isAdmin = !!(user?.role === 'admin' || currentPath.includes('/admin/'))
+  const isHR = !!(user?.role === 'hr' || currentPath.includes('/hr/'))
+  const isEmployee = !!(user?.role === 'employee' || currentPath.includes('/employee/'))
 
   useEffect(() => {
+    if (isAdmin) {
+      navigate('/admin/services')
+      return
+    }
     fetchData()
-  }, [user])
+  }, [user, isAdmin])
 
   const fetchData = async () => {
     try {
@@ -131,7 +141,8 @@ const ServiceList = () => {
   }
 
   const handleViewService = (service) => {
-    navigate(`/services/${service.id}`)
+    const path = isAdmin ? `/admin/services/${service.id}` : `/services/${service.id}`
+    navigate(path)
   }
 
   const handleDeleteClick = (service) => {
@@ -178,6 +189,28 @@ const ServiceList = () => {
     setSelectedService(null)
   }
 
+  const handleAssignClick = (service) => {
+    setSelectedService(service)
+    setSelectedEmployeeId(service.assignedTo || '')
+    setAssignDialogOpen(true)
+    handleMenuClose()
+  }
+
+  const handleAssignConfirm = async () => {
+    try {
+      await serviceAPI.assignService(selectedService.id, { employeeId: selectedEmployeeId })
+      // Update local state
+      setServices(prev => prev.map(s =>
+        s.id === selectedService.id ? { ...s, assignedTo: selectedEmployeeId } : s
+      ))
+      setAssignDialogOpen(false)
+      setSelectedService(null)
+      setSelectedEmployeeId('')
+    } catch (error) {
+      console.error('Assignment failed:', error)
+    }
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -214,37 +247,53 @@ const ServiceList = () => {
     return employee ? employee.avatar : ''
   }
 
-  const isAdmin = user?.role === 'admin'
-  const isHR = user?.role === 'hr'
-
-  const themeColor = user?.role === 'employee'
+  const themeColor = isEmployee
     ? '#2f80ed'
-    : user?.role === 'admin'
+    : isAdmin
       ? '#d32f2f'
-      : user?.role === 'hr'
-        ? '#f2c94c'
+      : isHR
+        ? '#FFC107'
         : '#d32f2f'
 
-  const themeTextColor = user?.role === 'hr' ? 'black' : 'white'
+  const themeTextColor = isHR ? 'black' : 'white'
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <Box sx={{
-        backgroundColor: themeColor,
-        color: themeTextColor,
+        background: isEmployee
+          ? 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)'
+          : isAdmin
+            ? 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)'
+            : 'linear-gradient(135deg, #FFC107 0%, #FFB300 100%)',
+        color: isHR ? 'black' : 'white',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={() => navigate(`/dashboard/${user?.role || 'employee'}`)}>
+          <IconButton
+            color="inherit"
+            onClick={() => {
+              const role = isAdmin ? 'admin' : (isHR ? 'hr' : (user?.role || 'employee'))
+              navigate(`/dashboard/${role}`)
+            }}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            Service Management
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Service Management
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              {isEmployee ? 'View and track your assigned services' : 'Manage organizational service requests'}
+            </Typography>
+          </Box>
         </Box>
         {(isAdmin || isHR) && (
           <Button
@@ -253,8 +302,11 @@ const ServiceList = () => {
             startIcon={<Add />}
             onClick={handleAddService}
             sx={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+              backgroundColor: 'white',
+              color: user?.role === 'hr' ? '#FFC107' : '#d32f2f',
+              '&:hover': { backgroundColor: '#f5f5f5' },
+              fontWeight: 600,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
           >
             Create Service
@@ -263,212 +315,214 @@ const ServiceList = () => {
       </Box>
 
       {/* Filters and Search */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                placeholder="Search services..."
-                value={searchTerm}
-                onChange={handleSearch}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+      <Box px={3} pt={3}>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  placeholder="Search services..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="in_progress">In Progress</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Priority"
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Priority</MenuItem>
+                  <MenuItem value="high">High</MenuItem>
+                  <MenuItem value="medium">Medium</MenuItem>
+                  <MenuItem value="low">Low</MenuItem>
+                </TextField>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <TextField
-                fullWidth
-                select
-                label="Status"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <TextField
-                fullWidth
-                select
-                label="Priority"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <MenuItem value="all">All Priority</MenuItem>
-                <MenuItem value="high">High</MenuItem>
-                <MenuItem value="medium">Medium</MenuItem>
-                <MenuItem value="low">Low</MenuItem>
-              </TextField>
-            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Statistics Cards */}
+        <Grid container spacing={3} mb={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box textAlign="center">
+                  <Typography variant="h4" color="primary">
+                    {filteredServices.length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Services
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
-        </CardContent>
-      </Card>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box textAlign="center">
+                  <Typography variant="h4" color="warning.main">
+                    {filteredServices.filter(s => s.status === 'pending').length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Pending
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box textAlign="center">
+                  <Typography variant="h4" color="info.main">
+                    {filteredServices.filter(s => s.status === 'in_progress').length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    In Progress
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box textAlign="center">
+                  <Typography variant="h4" color="success.main">
+                    {filteredServices.filter(s => s.status === 'completed').length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Completed
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
 
-      {/* Statistics Cards */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box textAlign="center">
-                <Typography variant="h4" color="primary">
-                  {filteredServices.length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Services
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box textAlign="center">
-                <Typography variant="h4" color="warning.main">
-                  {filteredServices.filter(s => s.status === 'pending').length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Pending
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box textAlign="center">
-                <Typography variant="h4" color="info.main">
-                  {filteredServices.filter(s => s.status === 'in_progress').length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  In Progress
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box textAlign="center">
-                <Typography variant="h4" color="success.main">
-                  {filteredServices.filter(s => s.status === 'completed').length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Completed
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Services Table */}
-      <Card>
-        <CardContent>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Service</TableCell>
-                  <TableCell>Assigned To</TableCell>
-                  <TableCell>Priority</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell>Due Date</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredServices.map((service) => (
-                  <TableRow key={service.id} hover>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          {service.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {service.category}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {service.description}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Avatar
-                          src={getEmployeeAvatar(service.assignedTo)}
-                          sx={{ mr: 2, width: 32, height: 32 }}
-                        >
-                          <Person />
-                        </Avatar>
+        {/* Services Table */}
+        <Card>
+          <CardContent>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Service</TableCell>
+                    <TableCell>Assigned To</TableCell>
+                    <TableCell>Priority</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Created</TableCell>
+                    <TableCell>Due Date</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredServices.map((service) => (
+                    <TableRow key={service.id} hover>
+                      <TableCell>
                         <Box>
-                          <Typography variant="body2">
-                            {getEmployeeName(service.assignedTo)}
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {service.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {service.category}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {service.createdByName}
+                            {service.description}
                           </Typography>
                         </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={service.priority}
-                        size="small"
-                        sx={{
-                          backgroundColor: getPriorityColor(service.priority),
-                          color: 'white'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={service.status.replace('_', ' ')}
-                        size="small"
-                        sx={{
-                          backgroundColor: getStatusColor(service.status),
-                          color: 'white'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {new Date(service.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {new Date(service.dueDate).toLocaleDateString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Actions">
-                        <IconButton
-                          onClick={(e) => handleMenuClick(e, service)}
-                        >
-                          <MoreVert />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" alignItems="center">
+                          <Avatar
+                            src={getEmployeeAvatar(service.assignedTo)}
+                            sx={{ mr: 2, width: 32, height: 32 }}
+                          >
+                            <Person />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2">
+                              {getEmployeeName(service.assignedTo)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {service.createdByName}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={service.priority}
+                          size="small"
+                          sx={{
+                            backgroundColor: getPriorityColor(service.priority),
+                            color: 'white'
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={service.status.replace('_', ' ')}
+                          size="small"
+                          sx={{
+                            backgroundColor: getStatusColor(service.status),
+                            color: 'white'
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(service.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(service.dueDate).toLocaleDateString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="Actions">
+                          <IconButton
+                            onClick={(e) => handleMenuClick(e, service)}
+                          >
+                            <MoreVert />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Actions Menu */}
       <Menu
@@ -485,6 +539,10 @@ const ServiceList = () => {
             <MenuItem onClick={() => handleEditService(selectedService)}>
               <Edit sx={{ mr: 1 }} />
               Edit
+            </MenuItem>
+            <MenuItem onClick={() => handleAssignClick(selectedService)}>
+              <Person sx={{ mr: 1 }} />
+              Assign Work
             </MenuItem>
             <MenuItem onClick={() => handleStatusUpdate(selectedService, 'pending')}>
               <Assignment sx={{ mr: 1 }} />
@@ -523,6 +581,40 @@ const ServiceList = () => {
           <Button onClick={handleDeleteCancel}>Cancel</Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Assign Work Dialog */}
+      <Dialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Assign Service</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              select
+              label="Select Employee"
+              value={selectedEmployeeId}
+              onChange={(e) => setSelectedEmployeeId(e.target.value)}
+            >
+              <MenuItem value="">Unassigned</MenuItem>
+              {employees.map((emp) => (
+                <MenuItem key={emp.id || emp._id} value={emp.id || emp._id}>
+                  {emp.name} ({emp.department || 'N/A'})
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleAssignConfirm} color="primary" variant="contained">
+            Confirm Assignment
           </Button>
         </DialogActions>
       </Dialog>

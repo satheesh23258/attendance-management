@@ -156,7 +156,6 @@ router.get('/history', auth, async (req, res) => {
       if (startDate) filter.date.$gte = startDate;
       if (endDate) filter.date.$lte = endDate;
     }
-
     const attendance = await Attendance.find(filter).sort({ date: -1 });
     res.json(attendance);
   } catch (error) {

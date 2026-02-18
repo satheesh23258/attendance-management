@@ -6,7 +6,7 @@ import {
   Typography,
   Button,
   Grid,
-  Avatar as MuiAvatar,
+  Avatar,
   Table,
   TableBody,
   TableCell,
@@ -20,7 +20,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  CircularProgress
 } from '@mui/material'
 import {
   ArrowBack,
@@ -32,29 +33,38 @@ import {
   Visibility
 } from '@mui/icons-material'
 import { useTheme } from '../../contexts/ThemeContext'
-import { mockUsers } from '../../services/mockData'
+import { employeeAPI } from '../../services/api'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 const EmployeeRecords = () => {
   const { colors } = useTheme()
-  const [employees, setEmployees] = useState(mockUsers)
+  const navigate = useNavigate()
+  const [employees, setEmployees] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [openDialog, setOpenDialog] = useState(false)
-  const [editingEmployee, setEditingEmployee] = useState(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    department: '',
-    position: '',
-    status: 'Active'
-  })
 
-  // Remove the useEffect that was fetching from API
-  // Now using real sign-up data directly
+  useEffect(() => {
+    fetchEmployees()
+  }, [])
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true)
+      const response = await employeeAPI.getAll()
+      setEmployees(response.data.data || response.data || [])
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+      toast.error('Failed to load employee records')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleBack = () => {
-    window.history.back()
+    navigate(-1)
   }
 
   const handleViewDetails = (employee) => {
@@ -63,10 +73,10 @@ const EmployeeRecords = () => {
   }
 
   const filteredEmployees = employees.filter(emp =>
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.employeeId && emp.employeeId.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const getStatusColor = (status) => {
@@ -89,17 +99,25 @@ const EmployeeRecords = () => {
   }
 
   const getInitials = (name) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    )
   }
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: colors.primary.main, 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        backgroundColor: '#FFC107', // Enforced Yellow Theme
+        color: 'black',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -206,7 +224,7 @@ const EmployeeRecords = () => {
                 </TableHead>
                 <TableBody>
                   {filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id} hover>
+                    <TableRow key={employee.id || employee._id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar sx={{ bgcolor: colors.primary.main }}>
@@ -225,23 +243,23 @@ const EmployeeRecords = () => {
                       <TableCell>{employee.department}</TableCell>
                       <TableCell>{employee.position}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={employee.performance}
-                          color={getPerformanceColor(employee.performance)}
+                        <Chip
+                          label={employee.performance || 'Average'}
+                          color={getPerformanceColor(employee.performance || 'Average')}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>{employee.attendance}</TableCell>
+                      <TableCell>{employee.attendance || '0%'}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={employee.status}
-                          color={getStatusColor(employee.status)}
+                        <Chip
+                          label={employee.status || 'Active'}
+                          color={getStatusColor(employee.status || 'Active')}
                           size="small"
                         />
                       </TableCell>
                       <TableCell>
-                        <IconButton 
-                          color="primary" 
+                        <IconButton
+                          color="primary"
                           onClick={() => handleViewDetails(employee)}
                           size="small"
                         >
@@ -250,6 +268,13 @@ const EmployeeRecords = () => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredEmployees.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        No employees found
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -262,12 +287,12 @@ const EmployeeRecords = () => {
         <DialogTitle>Employee Details</DialogTitle>
         <DialogContent>
           {selectedEmployee && (
-            <Grid container spacing={2}>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Employee ID"
-                  value={selectedEmployee.employeeId}
+                  value={selectedEmployee.employeeId || 'N/A'}
                   disabled
                   margin="normal"
                 />
@@ -276,7 +301,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Status"
-                  value={selectedEmployee.status}
+                  value={selectedEmployee.status || 'Active'}
                   disabled
                   margin="normal"
                 />
@@ -285,7 +310,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Full Name"
-                  value={selectedEmployee.name}
+                  value={selectedEmployee.name || ''}
                   disabled
                   margin="normal"
                 />
@@ -294,7 +319,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Email"
-                  value={selectedEmployee.email}
+                  value={selectedEmployee.email || ''}
                   disabled
                   margin="normal"
                 />
@@ -303,7 +328,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Phone"
-                  value={selectedEmployee.phone}
+                  value={selectedEmployee.phone || 'N/A'}
                   disabled
                   margin="normal"
                 />
@@ -312,7 +337,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Department"
-                  value={selectedEmployee.department}
+                  value={selectedEmployee.department || ''}
                   disabled
                   margin="normal"
                 />
@@ -321,7 +346,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Position"
-                  value={selectedEmployee.position}
+                  value={selectedEmployee.position || ''}
                   disabled
                   margin="normal"
                 />
@@ -330,7 +355,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Manager"
-                  value={selectedEmployee.manager}
+                  value={selectedEmployee.manager || 'N/A'}
                   disabled
                   margin="normal"
                 />
@@ -339,7 +364,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Join Date"
-                  value={selectedEmployee.joinDate}
+                  value={selectedEmployee.joinDate ? new Date(selectedEmployee.joinDate).toLocaleDateString() : 'N/A'}
                   disabled
                   margin="normal"
                 />
@@ -348,16 +373,7 @@ const EmployeeRecords = () => {
                 <TextField
                   fullWidth
                   label="Performance"
-                  value={selectedEmployee.performance}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Attendance Rate"
-                  value={selectedEmployee.attendance}
+                  value={selectedEmployee.performance || 'N/A'}
                   disabled
                   margin="normal"
                 />

@@ -167,22 +167,21 @@ const AdminDashboard = () => {
           background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
           color: 'white',
           p: 3,
-          borderRadius: 2,
-          mb: 3
+          borderRadius: '0 0 16px 16px',
+          mb: 3,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}
       >
         <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 700 }}>
           Admin Dashboard
         </Typography>
         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-          Welcome back! Here's an overview of your organization.
+          Welcome back! Here's a high-level overview of your organization's performance and staff.
         </Typography>
       </Box>
 
       {/* Quick Actions */}
       <QuickActions role="admin" />
-
-
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

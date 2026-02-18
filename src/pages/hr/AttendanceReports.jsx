@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Card,
@@ -24,7 +24,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  LinearProgress
+  LinearProgress,
+  CircularProgress
 } from '@mui/material'
 import {
   ArrowBack,
@@ -36,79 +37,40 @@ import {
   Cancel,
   Schedule
 } from '@mui/icons-material'
+import { attendanceAPI } from '../../services/api'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 const AttendanceReports = () => {
-  const [attendanceData, setAttendanceData] = useState([
-    {
-      id: 1,
-      employeeName: 'John Doe',
-      employeeId: 'EMP001',
-      date: '2024-01-26',
-      checkIn: '09:00 AM',
-      checkOut: '06:00 PM',
-      status: 'Present',
-      duration: '9h 0m',
-      overtime: '0h 0m',
-      department: 'Engineering'
-    },
-    {
-      id: 2,
-      employeeName: 'Jane Smith',
-      employeeId: 'EMP002',
-      date: '2024-01-26',
-      checkIn: '08:45 AM',
-      checkOut: '06:15 PM',
-      status: 'Present',
-      duration: '9h 30m',
-      overtime: '0h 30m',
-      department: 'HR'
-    },
-    {
-      id: 3,
-      employeeName: 'Mike Johnson',
-      employeeId: 'EMP003',
-      date: '2024-01-26',
-      checkIn: '09:15 AM',
-      checkOut: '05:45 PM',
-      status: 'Late',
-      duration: '8h 30m',
-      overtime: '0h 0m',
-      department: 'Sales'
-    },
-    {
-      id: 4,
-      employeeName: 'Sarah Williams',
-      employeeId: 'EMP004',
-      date: '2024-01-26',
-      checkIn: '--',
-      checkOut: '--',
-      status: 'Absent',
-      duration: '0h 0m',
-      overtime: '0h 0m',
-      department: 'Marketing'
-    },
-    {
-      id: 5,
-      employeeName: 'Tom Brown',
-      employeeId: 'EMP005',
-      date: '2024-01-26',
-      checkIn: '08:30 AM',
-      checkOut: '07:30 PM',
-      status: 'Present',
-      duration: '11h 0m',
-      overtime: '2h 0m',
-      department: 'Engineering'
-    }
-  ])
-
+  const navigate = useNavigate()
+  const [attendanceData, setAttendanceData] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filterDepartment, setFilterDepartment] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDate, setFilterDate] = useState('')
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState(null)
 
+  useEffect(() => {
+    fetchAttendanceData()
+  }, [])
+
+  const fetchAttendanceData = async () => {
+    try {
+      setLoading(true)
+      // fetching all history or specific report endpoint
+      const response = await attendanceAPI.getAttendanceHistory()
+      setAttendanceData(response.data.data || response.data || [])
+    } catch (error) {
+      console.error('Error fetching attendance reports:', error)
+      toast.error('Failed to load attendance records')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleBack = () => {
-    window.history.back()
+    navigate(-1)
   }
 
   const handleViewDetails = (record) => {
@@ -116,15 +78,27 @@ const AttendanceReports = () => {
     setOpenDialog(true)
   }
 
-  const handleExport = () => {
-    // Generate PDF content
-    generateAttendancePDF()
+  const handleExport = async () => {
+    try {
+      toast.loading('Generating report...')
+      // In a real scenario, this would trigger an API call to download a file
+      // For now we can just show a success message as the backend export might need specific handling
+      // await reportsAPI.exportReport('attendance', { date: filterDate, department: filterDepartment })
+
+      // Simulating export for demonstration of UI interaction if backend not ready for blob
+      setTimeout(() => toast.dismiss(), 1000)
+      setTimeout(() => toast.success('Report generated successfully'), 1000)
+
+      generateAttendancePDF() // Keep existing PDF generation as fallback/frontend-only option
+    } catch (error) {
+      toast.error('Failed to export report')
+    }
   }
 
   const generateAttendancePDF = () => {
     // Create a new window for printing
     const printWindow = window.open('', '_blank')
-    
+
     // Create HTML content for PDF
     const htmlContent = `
       <!DOCTYPE html>
@@ -191,13 +165,13 @@ const AttendanceReports = () => {
           <tbody>
             ${attendanceData.map(record => `
               <tr>
-                <td>${record.employeeName}</td>
-                <td>${record.employeeId}</td>
+                <td>${record.employeeName || record.userId?.name || 'N/A'}</td>
+                <td>${record.employeeId || record.userId?.employeeId || 'N/A'}</td>
                 <td>${record.date}</td>
                 <td>${record.checkIn}</td>
                 <td>${record.checkOut}</td>
-                <td class="${record.status.toLowerCase()}">${record.status}</td>
-                <td>${record.duration}</td>
+                <td class="${record.status?.toLowerCase()}">${record.status}</td>
+                <td>${record.duration || '-'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -208,10 +182,10 @@ const AttendanceReports = () => {
       </body>
       </html>
     `
-    
+
     printWindow.document.write(htmlContent)
     printWindow.document.close()
-    
+
     // Wait for content to load, then print
     printWindow.onload = () => {
       printWindow.print()
@@ -265,14 +239,22 @@ const AttendanceReports = () => {
 
   const stats = getStatistics()
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#1976d2', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+      <Box sx={{
+        backgroundColor: '#FFC107', // Enforced Yellow Theme
+        color: 'black',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
@@ -348,9 +330,9 @@ const AttendanceReports = () => {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ flexGrow: 1 }}>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={parseFloat(stats.avgAttendance)} 
+                <LinearProgress
+                  variant="determinate"
+                  value={parseFloat(stats.avgAttendance)}
                   sx={{ height: 10, borderRadius: 5 }}
                 />
               </Box>
@@ -466,10 +448,10 @@ const AttendanceReports = () => {
                       <TableCell>
                         <Box>
                           <Typography variant="body1" fontWeight="medium">
-                            {record.employeeName}
+                            {record.employeeName || record.userId?.name || 'Unknown'}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {record.employeeId} • {record.department}
+                            {record.employeeId || record.userId?.employeeId || 'N/A'} • {record.department || 'N/A'}
                           </Typography>
                         </Box>
                       </TableCell>
@@ -478,14 +460,14 @@ const AttendanceReports = () => {
                       <TableCell>{record.checkOut}</TableCell>
                       <TableCell>{record.duration}</TableCell>
                       <TableCell>
-                        <Typography variant="body2" color={record.overtime !== '0h 0m' ? 'warning.main' : 'text.secondary'}>
-                          {record.overtime}
+                        <Typography variant="body2" color={record.overtime && record.overtime !== '0h 0m' ? 'warning.main' : 'text.secondary'}>
+                          {record.overtime || '-'}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {getStatusIcon(record.status)}
-                          <Chip 
+                          <Chip
                             label={record.status}
                             color={getStatusColor(record.status)}
                             size="small"
@@ -493,8 +475,8 @@ const AttendanceReports = () => {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <IconButton 
-                          color="primary" 
+                        <IconButton
+                          color="primary"
                           onClick={() => handleViewDetails(record)}
                           size="small"
                         >
@@ -503,98 +485,105 @@ const AttendanceReports = () => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredData.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        No attendance records found
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
           </CardContent>
         </Card>
-      </Box>
 
-      {/* Details Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Attendance Details</DialogTitle>
-        <DialogContent>
-          {selectedRecord && (
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Employee Name"
-                  value={selectedRecord.employeeName}
-                  disabled
-                  margin="normal"
-                />
+        {/* Details Dialog */}
+        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Attendance Details</DialogTitle>
+          <DialogContent>
+            {selectedRecord && (
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Employee Name"
+                    value={selectedRecord.employeeName || selectedRecord.userId?.name || ''}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Employee ID"
+                    value={selectedRecord.employeeId || selectedRecord.userId?.employeeId || ''}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Date"
+                    value={selectedRecord.date}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Status"
+                    value={selectedRecord.status}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Check In"
+                    value={selectedRecord.checkIn}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Check Out"
+                    value={selectedRecord.checkOut}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Total Duration"
+                    value={selectedRecord.duration}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Overtime"
+                    value={selectedRecord.overtime || '0h 0m'}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Employee ID"
-                  value={selectedRecord.employeeId}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Date"
-                  value={selectedRecord.date}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Status"
-                  value={selectedRecord.status}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Check In"
-                  value={selectedRecord.checkIn}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Check Out"
-                  value={selectedRecord.checkOut}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Total Duration"
-                  value={selectedRecord.duration}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Overtime"
-                  value={selectedRecord.overtime}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDialog(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </Box>
   )
 }

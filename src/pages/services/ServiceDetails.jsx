@@ -191,25 +191,56 @@ const ServiceDetails = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5', p: 3 }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Box display="flex" alignItems="center" mb={3}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/admin/services')}
-          sx={{ mr: 2 }}
-        >
-          Back to Services
-        </Button>
-        <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
-          Service Details
-        </Typography>
+      <Box sx={{
+        background: user?.role === 'employee'
+          ? 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)'
+          : user?.role === 'admin'
+            ? 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)'
+            : 'linear-gradient(135deg, #FFC107 0%, #FFB300 100%)',
+        color: user?.role === 'hr' ? 'black' : 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => {
+              const path = (isAdmin || isHR) ? '/admin/services' : '/employee/services'
+              navigate(path)
+            }}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Service Details
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Detailed overview of service request and assignment
+            </Typography>
+          </Box>
+        </Box>
         {(isAdmin || isHR) && (
           <Button
             variant="contained"
+            color="inherit"
             startIcon={<Edit />}
             onClick={handleEdit}
-            sx={{ mr: 1 }}
+            sx={{
+              backgroundColor: 'white',
+              color: user?.role === 'hr' ? '#FFC107' : '#d32f2f',
+              '&:hover': { backgroundColor: '#f5f5f5' },
+              fontWeight: 700,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
           >
             Edit Service
           </Button>

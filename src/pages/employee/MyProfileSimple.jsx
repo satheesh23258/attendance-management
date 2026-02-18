@@ -51,80 +51,107 @@ const MyProfileSimple = () => {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
+    <div style={{
+      minHeight: '100vh',
       backgroundColor: '#f5f5f5',
       fontFamily: 'Arial, sans-serif'
     }}>
       {/* Header */}
-      <div style={{ 
-        backgroundColor: '#1976d2', 
-        color: 'white', 
-        padding: '20px', 
-        display: 'flex', 
+      <div style={{
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+        color: 'white',
+        padding: '24px',
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        borderBottomLeftRadius: '16px',
+        borderBottomRightRadius: '16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
             onClick={handleBack}
             style={{
-              background: 'none',
+              background: 'rgba(255,255,255,0.1)',
               border: 'none',
               color: 'white',
-              fontSize: '16px',
-              cursor: 'pointer'
+              fontSize: '18px',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s'
             }}
+            onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
           >
-            ← Back
+            ←
           </button>
-          <h1 style={{ margin: 0, fontSize: '28px' }}>
-            My Profile
-          </h1>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold' }}>
+              My Profile
+            </h1>
+            <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+              Manage your personal and work information
+            </p>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
           {isEditing ? (
             <>
-              <button 
+              <button
                 onClick={handleCancel}
                 style={{
                   background: 'none',
-                  border: '1px solid white',
+                  border: '1px solid rgba(255,255,255,0.5)',
                   color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px'
                 }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSave}
                 style={{
                   background: 'white',
                   border: 'none',
                   color: '#1976d2',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }}
               >
-                Save
+                Save Changes
               </button>
             </>
           ) : (
-            <button 
+            <button
               onClick={handleEdit}
               style={{
-                background: 'none',
-              border: '1px solid white',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+                background: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '10px 24px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                backdropFilter: 'blur(4px)'
+              }}
+              onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+              onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
             >
-              Edit
+              Edit Profile
             </button>
           )}
         </div>

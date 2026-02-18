@@ -65,11 +65,11 @@ const Profile = () => {
         avatar: user.avatar || ''
       })
       setAvatarPreview(user.avatar || '')
-      
+
       // Calculate user statistics
       const userAttendance = mockAttendance.filter(a => a.employeeId === user.id)
       const userServices = mockServices.filter(s => s.assignedTo === user.id)
-      
+
       setStats({
         totalAttendance: userAttendance.length,
         presentDays: userAttendance.filter(a => a.status === 'present').length,
@@ -189,7 +189,7 @@ const Profile = () => {
                     </IconButton>
                   )}
                 </Box>
-                
+
                 <Typography variant="h5" gutterBottom>
                   {isEditing ? (
                     <TextField
@@ -204,7 +204,7 @@ const Profile = () => {
                     user?.name
                   )}
                 </Typography>
-                
+
                 <Chip
                   label={user?.role?.toUpperCase()}
                   sx={{
@@ -213,11 +213,11 @@ const Profile = () => {
                     mb: 2
                   }}
                 />
-                
+
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Employee ID: {user?.employeeId || 'EMP001'}
                 </Typography>
-                
+
                 <Typography variant="body2" color="text.secondary">
                   Department: {isEditing ? (
                     <TextField
@@ -234,9 +234,9 @@ const Profile = () => {
                   )}
                 </Typography>
               </Box>
-              
+
               <Divider sx={{ my: 2 }} />
-              
+
               <List dense>
                 <ListItem>
                   <ListItemIcon>
@@ -258,7 +258,7 @@ const Profile = () => {
                     )}
                   />
                 </ListItem>
-                
+
                 <ListItem>
                   <ListItemIcon>
                     <Phone color="primary" />
@@ -279,7 +279,7 @@ const Profile = () => {
                     )}
                   />
                 </ListItem>
-                
+
                 <ListItem>
                   <ListItemIcon>
                     <Business color="primary" />
@@ -290,7 +290,7 @@ const Profile = () => {
                   />
                 </ListItem>
               </List>
-              
+
               <Box mt={2}>
                 {isEditing ? (
                   <Box display="flex" gap={1}>
@@ -351,7 +351,7 @@ const Profile = () => {
                           Attendance Rate
                         </Typography>
                         <Typography variant="h4">
-                          {stats.totalAttendance > 0 
+                          {stats.totalAttendance > 0
                             ? Math.round((stats.presentDays / stats.totalAttendance) * 100)
                             : 0}%
                         </Typography>
@@ -376,7 +376,7 @@ const Profile = () => {
                           Service Completion
                         </Typography>
                         <Typography variant="h4">
-                          {stats.totalServices > 0 
+                          {stats.totalServices > 0
                             ? Math.round((stats.completedServices / stats.totalServices) * 100)
                             : 0}%
                         </Typography>

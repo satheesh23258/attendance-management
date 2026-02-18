@@ -50,11 +50,11 @@ const EmployeeProfile = () => {
     const employeeData = mockUsers.find(emp => emp.id === parseInt(id))
     if (employeeData) {
       setEmployee(employeeData)
-      
+
       // Get attendance history for this employee
       const empAttendance = mockAttendance.filter(a => a.employeeId === parseInt(id))
       setAttendanceHistory(empAttendance)
-      
+
       // Get service history for this employee
       const empServices = mockServices.filter(s => s.assignedTo === parseInt(id))
       setServiceHistory(empServices)
@@ -307,8 +307,8 @@ const EmployeeProfile = () => {
                           label={service.priority}
                           size="small"
                           sx={{
-                            backgroundColor: service.priority === 'high' ? '#d32f2f' : 
-                                            service.priority === 'medium' ? '#ed6c02' : '#2e7d32',
+                            backgroundColor: service.priority === 'high' ? '#d32f2f' :
+                              service.priority === 'medium' ? '#ed6c02' : '#2e7d32',
                             color: 'white'
                           }}
                         />
@@ -330,7 +330,7 @@ const EmployeeProfile = () => {
                         {new Date(service.dueDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {service.completedAt ? 
+                        {service.completedAt ?
                           new Date(service.completedAt).toLocaleDateString() : '-'
                         }
                       </TableCell>

@@ -102,8 +102,10 @@ export const AuthProvider = ({ children }) => {
             }
           } catch (e) {
             console.error('Failed to fetch hybrid permissions', e);
+            if (e.response?.status === 401) {
+              throw e; // Let the outer catch handle 401
+            }
           }
-
           dispatch({
             type: 'LOGIN_SUCCESS',
             payload: {
@@ -112,6 +114,7 @@ export const AuthProvider = ({ children }) => {
             }
           })
         } catch (error) {
+          console.error('Auth initialization failed:', error);
           localStorage.removeItem('token')
           localStorage.removeItem('user')
           dispatch({ type: 'LOGIN_FAILURE' })
@@ -122,6 +125,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     initAuth()
+
+    const handleAuthExpired = () => {
+      logout()
+    }
+
+    window.addEventListener('auth-expired', handleAuthExpired)
+    return () => window.removeEventListener('auth-expired', handleAuthExpired)
   }, [])
 
   const login = async (credentials) => {
@@ -134,7 +144,6 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(user))
-
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: { user, token }

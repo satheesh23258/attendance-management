@@ -19,12 +19,14 @@ import Location from './models/Location.js';
 import Notification from './models/Notification.js';
 import HybridPermission from './models/HybridPermission.js';
 
+
 import authRoutes from './routes/authRoutes.js';
 import employeeRoutes from './routes/employeeRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+
 import hybridPermissionRoutes from './routes/hybridPermissionRoutes.js';
 
 const app = express();
@@ -56,19 +58,14 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
+
 app.use('/api/hybrid-permissions', hybridPermissionRoutes);
 import leaveRoutes from './routes/leaveRoutes.js';
 app.use('/api/leaves', leaveRoutes);
 
 // Seed database with UI data if empty
 const seedDatabase = async () => {
-  // Check if users exist to avoid re-seeding
-  const userCount = await User.countDocuments();
-  if (userCount > 0) {
-    console.log('Database already seeded. Skipping seed.');
-    return;
-  }
-
+  // Check if employees exist to avoid re-seeding
   const count = await Employee.countDocuments();
   if (count > 0) return;
 

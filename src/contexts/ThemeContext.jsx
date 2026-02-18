@@ -52,24 +52,24 @@ const roleThemes = {
   },
   hr: {
     primary: {
-      main: '#f57c00', // Yellow/Orange
-      light: '#ffb74d',
-      dark: '#ef6c00',
-      contrastText: '#ffffff'
+      main: '#FFC107', // Amber 500
+      light: '#FFD54F', // Amber 300
+      dark: '#FFA000', // Amber 700
+      contrastText: '#000000'
     },
     secondary: {
-      main: '#ff9800',
-      light: '#ffb74d',
-      dark: '#f57c00',
-      contrastText: '#ffffff'
+      main: '#FF9800', // Orange 500
+      light: '#FFB74D', // Orange 300
+      dark: '#F57C00', // Orange 700
+      contrastText: '#000000'
     },
     background: {
       default: '#fafafa',
       paper: '#ffffff'
     },
     header: {
-      main: '#f57c00',
-      gradient: 'linear-gradient(135deg, #f57c00 0%, #ff9800 100%)'
+      main: '#FFC107',
+      gradient: 'linear-gradient(135deg, #FFC107 0%, #FF9800 100%)'
     }
   },
   employee: {
@@ -121,7 +121,7 @@ const roleThemes = {
 export const RoleThemeProvider = ({ children, role }) => {
   const theme = useMemo(() => {
     const roleTheme = roleThemes[role] || roleThemes.employee
-    
+
     // Minimal theme to avoid MUI conflicts
     return createTheme({
       palette: {

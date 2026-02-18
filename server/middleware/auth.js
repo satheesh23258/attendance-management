@@ -7,6 +7,7 @@ export const auth = async (req, res, next) => {
     const header = req.headers.authorization || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
     if (!token) {
+      console.warn(`[AUTH] No token provided for ${req.method} ${req.url}`);
       return res.status(401).json({ message: 'Not authenticated' });
     }
 
@@ -17,12 +18,14 @@ export const auth = async (req, res, next) => {
 
     const user = await User.findById(decoded.id);
     if (!user) {
+      console.warn(`[AUTH] User not found for ID: ${decoded.id}`);
       return res.status(401).json({ message: 'User not found' });
     }
 
     req.user = user;
     next();
   } catch (err) {
+    console.error(`[AUTH] Token verification failed for ${req.method} ${req.url}:`, err.message);
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
