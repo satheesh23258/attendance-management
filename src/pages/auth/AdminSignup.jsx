@@ -35,6 +35,11 @@ const AdminSignup = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [resendTimer, setResendTimer] = useState(0)
 
   const handleChange = (e) => {
     setFormData({
@@ -63,6 +68,17 @@ const AdminSignup = () => {
     }
 
     try {
+      // Before registering, ensure email is verified via OTP
+      if (!emailVerified) {
+        // send OTP and show OTP input
+        await authAPI.sendOtp({ email: formData.email })
+        setOtpSent(true)
+        setResendTimer(60)
+        setLoading(false)
+        return
+      }
+
+      // Email already verified — proceed with registration
       await authAPI.register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
@@ -81,6 +97,53 @@ const AdminSignup = () => {
       setLoading(false)
     }
   }
+
+  // OTP verify handler
+  const handleVerifyOtp = async () => {
+    setOtpLoading(true)
+    setError('')
+    try {
+      await authAPI.verifyOtp({ email: formData.email, code: otpCode })
+      setEmailVerified(true)
+      setOtpSent(false)
+      setOtpCode('')
+      setSuccess('Email verified — completing registration...')
+      // proceed to submit the registration
+      setLoading(true)
+      await authAPI.register({
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        role: 'admin',
+        department: formData.department,
+        phone: formData.phone,
+      })
+      setTimeout(() => window.location.href = '/login/admin', 1200)
+    } catch (err) {
+      setError(err.response?.data?.message || 'OTP verification failed')
+    } finally {
+      setOtpLoading(false)
+      setLoading(false)
+    }
+  }
+
+  // Resend OTP
+  const handleResend = async () => {
+    setError('')
+    try {
+      await authAPI.sendOtp({ email: formData.email })
+      setResendTimer(60)
+    } catch (err) {
+      setError('Failed to resend OTP')
+    }
+  }
+
+  // countdown for resend timer
+  React.useEffect(() => {
+    if (resendTimer <= 0) return
+    const t = setInterval(() => setResendTimer((s) => s - 1), 1000)
+    return () => clearInterval(t)
+  }, [resendTimer])
 
   return (
     <Box sx={{ 
@@ -164,6 +227,30 @@ const AdminSignup = () => {
                 placeholder="admin@company.com"
               />
 
+              {/* OTP input shown after OTP is sent */}
+              {otpSent && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    Enter the 6-digit code sent to <strong>{formData.email}</strong>
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Verification Code"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    sx={{ mb: 1 }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="contained" onClick={handleVerifyOtp} disabled={otpLoading || otpCode.length < 6}>
+                      {otpLoading ? 'Verifying...' : 'Verify & Complete'}
+                    </Button>
+                    <Button variant="outlined" onClick={handleResend} disabled={resendTimer > 0}>
+                      {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend'}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
               <TextField
                 fullWidth
                 label="Phone Number"
@@ -217,7 +304,7 @@ const AdminSignup = () => {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading}
+                disabled={loading || otpLoading}
                 sx={{ 
                   bgcolor: '#d32f2f',
                   '&:hover': { bgcolor: '#b71c1c' },
@@ -225,7 +312,7 @@ const AdminSignup = () => {
                   fontSize: '16px'
                 }}
               >
-                {loading ? 'Creating Account...' : 'Create Admin Account'}
+                {loading ? 'Creating Account...' : otpSent ? 'Check Email for OTP' : 'Create Admin Account'}
               </Button>
             </form>
 
