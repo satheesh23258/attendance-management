@@ -194,6 +194,8 @@ const LiveLocation = () => {
     const mapElementRef = useRef(null)
     const mapRef = useRef(null)
     const markersRef = useRef([])
+    const directionsServiceRef = useRef(null)
+    const directionsRendererRef = useRef(null)
 
     // Read API key from Vite env var. Do NOT commit your .env with real keys.
     const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -228,6 +230,37 @@ const LiveLocation = () => {
             mapRef.current = new window.google.maps.Map(mapElementRef.current, {
               center: mapCenter,
               zoom: mapZoom
+            })
+            // Prepare directions refs
+            directionsServiceRef.current = null
+            directionsRendererRef.current = null
+
+            // Create a simple search box (Places Autocomplete)
+            const input = document.createElement('input')
+            input.type = 'text'
+            input.placeholder = 'Search places...'
+            input.style.cssText = 'width:260px;padding:8px;border:1px solid #ccc;border-radius:4px;margin:8px;background:white;'
+            mapElementRef.current.parentElement.appendChild(input)
+
+            const autocomplete = new window.google.maps.places.Autocomplete(input)
+            autocomplete.bindTo('bounds', mapRef.current)
+            autocomplete.addListener('place_changed', () => {
+              const place = autocomplete.getPlace()
+              if (!place.geometry) return
+              const dest = place.geometry.location.toJSON()
+              // Center map and show route
+              mapRef.current.panTo(dest)
+              mapRef.current.setZoom(14)
+              showRouteTo(dest)
+            })
+
+            // Add a clear route button
+            const btn = document.createElement('button')
+            btn.textContent = 'Clear Route'
+            btn.style.cssText = 'position:absolute;right:8px;top:8px;z-index:5;padding:8px;border-radius:6px;background:#fff;border:1px solid #ccc;cursor:pointer'
+            mapElementRef.current.parentElement.appendChild(btn)
+            btn.addEventListener('click', () => {
+              if (directionsRendererRef.current) directionsRendererRef.current.setDirections({ routes: [] })
             })
           }
         })
@@ -275,12 +308,60 @@ const LiveLocation = () => {
         const info = new window.google.maps.InfoWindow({
           content: `<div style="min-width:160px"><strong>${getEmployeeName(loc.employeeId)}</strong><div style="font-size:12px">${loc.address}</div><div style="font-size:11px;color:#666">${new Date(loc.timestamp).toLocaleString()}</div></div>`
         })
-        marker.addListener('click', () => info.open({ anchor: marker, map: mapRef.current }))
+        marker.addListener('click', () => {
+          info.open({ anchor: marker, map: mapRef.current })
+          // Draw directions from user's current location to this marker
+          showRouteTo(position)
+        })
 
         markersRef.current.push(marker)
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredLocations])
+
+    // Show route helper (uses directionsService/renderer)
+    const showRouteTo = async (destination) => {
+      if (!window.google || !mapRef.current) return
+
+      // Get user's current location if available
+      const getUserPos = () => new Promise((resolve) => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          }, () => resolve(mapRef.current.getCenter().toJSON()))
+        } else {
+          resolve(mapRef.current.getCenter().toJSON())
+        }
+      })
+
+      const origin = await getUserPos()
+
+      if (!directionsServiceRef.current) directionsServiceRef.current = new window.google.maps.DirectionsService()
+      if (!directionsRendererRef.current) {
+        directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+          map: mapRef.current,
+          suppressMarkers: false,
+          polylineOptions: { strokeColor: '#1976d2', strokeWeight: 6 }
+        })
+      }
+
+      directionsServiceRef.current.route({
+        origin,
+        destination,
+        travelMode: window.google.maps.TravelMode.DRIVING
+      }, (result, status) => {
+        if (status === 'OK') {
+          directionsRendererRef.current.setDirections(result)
+          // Fit bounds to route
+          const bounds = new window.google.maps.LatLngBounds()
+          const route = result.routes[0]
+          route.overview_path.forEach(p => bounds.extend(p))
+          mapRef.current.fitBounds(bounds)
+        } else {
+          console.error('Directions request failed:', status)
+        }
+      })
+    }
 
     return (
       <Box sx={{ height: 500, position: 'relative' }}>
