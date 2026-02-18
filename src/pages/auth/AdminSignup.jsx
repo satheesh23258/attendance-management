@@ -307,4 +307,6 @@ const AdminSignup = () => {
     </PageContainer>
   )
 
+}
+
 export default AdminSignup
