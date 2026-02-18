@@ -26,6 +26,8 @@ import EmployeeLogin from './pages/auth/EmployeeLogin'
 import AdminSignup from './pages/auth/AdminSignup'
 import HRSignup from './pages/auth/HRSignup'
 import EmployeeSignup from './pages/auth/EmployeeSignup'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 
 // HR Pages
 import EmployeeRecords from './pages/hr/EmployeeRecords'
@@ -88,6 +90,10 @@ function App() {
         <Route path="/signup/admin" element={<AdminSignup />} />
         <Route path="/signup/hr" element={<HRSignup />} />
         <Route path="/signup/employee" element={<EmployeeSignup />} />
+
+        {/* Password Recovery Routes */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Test Route */}
         <Route path="/test" element={<div style={{ padding: '20px', fontSize: '24px' }}>✅ Test Route Working!</div>} />

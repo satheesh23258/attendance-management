@@ -127,7 +127,8 @@ export const AuthProvider = ({ children }) => {
     initAuth()
 
     const handleAuthExpired = () => {
-      logout()
+      // Explicitly indicate session expiration so logout can show a different message
+      logout({ message: 'Session expired. Please log in again.', type: 'error' })
     }
 
     window.addEventListener('auth-expired', handleAuthExpired)
@@ -158,11 +159,16 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
+  const logout = ({ message, type } = {}) => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     dispatch({ type: 'LOGOUT' })
-    toast.success('Logged out successfully')
+    if (message) {
+      if (type === 'error') toast.error(message)
+      else toast.success(message)
+    } else {
+      toast.success('Logged out successfully')
+    }
   }
 
   const updateUser = (userData) => {

@@ -134,9 +134,19 @@ const AdminLogin = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                sx={{ mb: 3 }}
+                sx={{ mb: 1 }}
                 placeholder="Enter your password"
               />
+              
+              <Box sx={{ textAlign: 'right', mb: 3 }}>
+                <Button
+                  href="/forgot-password"
+                  size="small"
+                  sx={{ textTransform: 'none', color: '#d32f2f' }}
+                >
+                  Forgot Password?
+                </Button>
+              </Box>
 
               <Button
                 type="submit"
