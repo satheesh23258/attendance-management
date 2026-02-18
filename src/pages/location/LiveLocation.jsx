@@ -194,6 +194,7 @@ const LiveLocation = () => {
     const mapElementRef = useRef(null)
     const mapRef = useRef(null)
     const markersRef = useRef([])
+    const placesMarkersRef = useRef([])
     const directionsServiceRef = useRef(null)
     const directionsRendererRef = useRef(null)
 
@@ -262,13 +263,123 @@ const LiveLocation = () => {
             btn.addEventListener('click', () => {
               if (directionsRendererRef.current) directionsRendererRef.current.setDirections({ routes: [] })
             })
+
+            // --- Places discovery panel (like Zomato) ---
+            const placesPanel = document.createElement('div')
+            placesPanel.style.cssText = 'position:absolute;right:8px;bottom:8px;z-index:6;width:320px;max-height:50%;overflow:auto;padding:8px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);'
+
+            const header = document.createElement('div')
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'
+            const title = document.createElement('strong')
+            title.textContent = 'Discover Nearby'
+            const findBtn = document.createElement('button')
+            findBtn.textContent = 'Find'
+            findBtn.style.cssText = 'padding:6px 8px;border-radius:6px;background:#1976d2;color:white;border:none;cursor:pointer'
+            header.appendChild(title)
+            header.appendChild(findBtn)
+
+            const filters = document.createElement('div')
+            filters.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px'
+            const openNowLabel = document.createElement('label')
+            const openNowCheckbox = document.createElement('input')
+            openNowCheckbox.type = 'checkbox'
+            openNowLabel.appendChild(openNowCheckbox)
+            openNowLabel.appendChild(document.createTextNode(' Open now'))
+            const ratingSelect = document.createElement('select')
+            ratingSelect.innerHTML = '<option value="0">Any rating</option><option value="3">>= 3.0</option><option value="4">>= 4.0</option>'
+            filters.appendChild(openNowLabel)
+            filters.appendChild(ratingSelect)
+
+            const list = document.createElement('div')
+            list.style.cssText = 'display:flex;flex-direction:column;gap:6px'
+
+            placesPanel.appendChild(header)
+            placesPanel.appendChild(filters)
+            placesPanel.appendChild(list)
+            mapElementRef.current.parentElement.appendChild(placesPanel)
+
+            // Helper to clear places markers
+            const clearPlaces = () => {
+              placesMarkersRef.current.forEach(m => m.setMap(null))
+              placesMarkersRef.current = []
+              list.innerHTML = ''
+            }
+
+            // Perform nearby search
+            const performSearch = () => {
+              if (!window.google || !mapRef.current) return
+              clearPlaces()
+              const service = new window.google.maps.places.PlacesService(mapRef.current)
+              const request = {
+                location: mapRef.current.getCenter(),
+                radius: 3000,
+                type: ['restaurant']
+              }
+              if (openNowCheckbox.checked) request.openNow = true
+
+              service.nearbySearch(request, (results, status) => {
+                if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results) return
+                results.forEach((p) => {
+                  // apply rating filter
+                  const minR = parseFloat(ratingSelect.value || 0)
+                  if (p.rating && p.rating < minR) return
+
+                  const marker = new window.google.maps.Marker({
+                    position: p.geometry.location,
+                    map: mapRef.current,
+                    title: p.name,
+                    icon: {
+                      url: 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png',
+                      scaledSize: new window.google.maps.Size(40, 40)
+                    }
+                  })
+
+                  const info = new window.google.maps.InfoWindow({
+                    content: `<div style="min-width:180px"><strong>${p.name}</strong><div style="font-size:12px">${p.vicinity || ''}</div><div style="font-size:12px">Rating: ${p.rating || 'N/A'}</div></div>`
+                  })
+                  marker.addListener('click', () => {
+                    info.open({ anchor: marker, map: mapRef.current })
+                    showRouteTo(p.geometry.location.toJSON())
+                  })
+
+                  placesMarkersRef.current.push(marker)
+
+                  const item = document.createElement('div')
+                  item.style.cssText = 'padding:6px;border-radius:6px;border:1px solid #eee;cursor:pointer;background:#fafafa'
+                  item.innerHTML = `<strong>${p.name}</strong><div style="font-size:12px;color:#666">${p.vicinity || ''} • Rating: ${p.rating || 'N/A'}</div>`
+                  item.addEventListener('click', () => {
+                    mapRef.current.panTo(p.geometry.location)
+                    mapRef.current.setZoom(15)
+                    info.open({ anchor: marker, map: mapRef.current })
+                    showRouteTo(p.geometry.location.toJSON())
+                  })
+                  list.appendChild(item)
+                })
+              })
+            }
+
+            findBtn.addEventListener('click', performSearch)
+
+            // cleanup on unmount
+            mapElementRef.current._placesPanel = placesPanel
           }
         })
         .catch((err) => {
           console.error('Failed to load Google Maps script:', err)
         })
 
-      return () => { mounted = false }
+      return () => {
+        mounted = false
+        // remove places panel if created
+        try {
+          if (mapElementRef.current && mapElementRef.current._placesPanel) {
+            mapElementRef.current._placesPanel.remove()
+            delete mapElementRef.current._placesPanel
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
