@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
+import Otp from '../models/Otp.js';
+import nodemailer from 'nodemailer';
 
 const router = express.Router();
 const JWT_SECRET = process.env.VITE_JWT_SECRET || process.env.JWT_SECRET || 'demo-secret-key';
@@ -158,3 +160,79 @@ router.get('/me', async (req, res) => {
 });
 
 export default router;
+
+// --- OTP endpoints ---
+// POST /api/auth/send-otp { email }
+router.post('/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const normalized = email.toLowerCase().trim();
+
+    // rate-limit: prevent spamming by checking recent unused OTP
+    const recent = await Otp.findOne({ email: normalized, used: false }).sort({ createdAt: -1 });
+    if (recent && recent.expiresAt > new Date() && (Date.now() - new Date(recent.createdAt).getTime()) < 60000) {
+      return res.status(429).json({ message: 'OTP recently sent. Please wait a moment.' });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await Otp.create({ email: normalized, code, expiresAt });
+
+    // Setup transporter from env
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+
+    if (smtpHost && smtpPort && smtpUser && smtpPass) {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: parseInt(smtpPort, 10),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.VITE_EMAIL_FROM || 'noreply@company.com',
+        to: normalized,
+        subject: 'Your verification code',
+        text: `Your verification code is ${code}. It expires in 10 minutes.`,
+        html: `<p>Your verification code is <strong>${code}</strong>. It expires in 10 minutes.</p>`
+      };
+
+      await transporter.sendMail(mailOptions);
+      return res.json({ message: 'OTP sent to email' });
+    }
+
+    // If SMTP not configured, log the OTP for development and return success
+    console.warn('SMTP not configured — OTP for', normalized, 'is', code);
+    return res.json({ message: 'OTP generated (check server logs in development)' });
+  } catch (err) {
+    console.error('send-otp error', err);
+    return res.status(500).json({ message: 'Failed to send OTP' });
+  }
+});
+
+// POST /api/auth/verify-otp { email, code }
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ message: 'Email and code are required' });
+
+    const normalized = email.toLowerCase().trim();
+    const otp = await Otp.findOne({ email: normalized, code, used: false });
+    if (!otp) return res.status(400).json({ message: 'Invalid code' });
+    if (otp.expiresAt < new Date()) return res.status(400).json({ message: 'Code expired' });
+
+    otp.used = true;
+    await otp.save();
+
+    return res.json({ message: 'Email verified' });
+  } catch (err) {
+    console.error('verify-otp error', err);
+    return res.status(500).json({ message: 'Failed to verify OTP' });
+  }
+});
