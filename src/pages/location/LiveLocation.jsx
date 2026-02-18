@@ -102,16 +102,13 @@ const LiveLocation = () => {
   }
 
   useEffect(() => {
-    // Initialize Google Map (mock implementation)
+    // Initialize Google Map (real implementation below in MapComponent)
     initializeMap()
   }, [])
 
   const initializeMap = () => {
-    // This is a mock implementation
-    // In a real app, you would initialize the Google Maps JavaScript API here
-    console.log('Initializing Google Maps...')
-    console.log('Map center:', mapCenter)
-    console.log('Map zoom:', mapZoom)
+    // Legacy hook kept for compatibility. Actual map is initialized inside MapComponent.
+    console.log('Initializing Google Maps... (deferred to MapComponent)')
   }
 
   const handleRefresh = () => {
@@ -192,63 +189,105 @@ const LiveLocation = () => {
     }
   }
 
-  // Mock map component (replace with actual Google Maps implementation)
-  const MapComponent = () => (
-    <Box
-      sx={{
-        height: 500,
-        backgroundColor: '#f5f5f5',
-        border: '2px dashed #ccc',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative'
-      }}
-    >
-      <Typography variant="h6" color="text.secondary" gutterBottom>
-        Google Maps View
-      </Typography>
-      <Box sx={{ textAlign: 'center', mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          This is a placeholder for the Google Maps integration.
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          In production, this would display an interactive map with live employee locations.
-        </Typography>
+  // Google Maps implementation using the JS API (no extra package required)
+  const MapComponent = () => {
+    const mapElementRef = useRef(null)
+    const mapRef = useRef(null)
+    const markersRef = useRef([])
+
+    // Read API key from Vite env var. Do NOT commit your .env with real keys.
+    const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    if (!GOOGLE_MAPS_API_KEY) {
+      console.error('Missing Google Maps API key: set VITE_GOOGLE_MAPS_API_KEY in your .env')
+    }
+
+    const loadScript = (src) => {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve()
+          return
+        }
+        const s = document.createElement('script')
+        s.src = src
+        s.async = true
+        s.defer = true
+        s.onload = resolve
+        s.onerror = reject
+        document.head.appendChild(s)
+      })
+    }
+
+    // Initialize map once
+    useEffect(() => {
+      let mounted = true
+      const src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`
+      loadScript(src)
+        .then(() => {
+          if (!mounted) return
+          if (!mapRef.current && window.google && mapElementRef.current) {
+            mapRef.current = new window.google.maps.Map(mapElementRef.current, {
+              center: mapCenter,
+              zoom: mapZoom
+            })
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load Google Maps script:', err)
+        })
+
+      return () => { mounted = false }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // Update center and zoom
+    useEffect(() => {
+      if (mapRef.current) {
+        mapRef.current.setCenter(mapCenter)
+        mapRef.current.setZoom(mapZoom)
+      }
+    }, [mapCenter, mapZoom])
+
+    // Update markers when locations change
+    useEffect(() => {
+      if (!mapRef.current || !window.google) return
+
+      // Clear old markers
+      markersRef.current.forEach((m) => m.setMap(null))
+      markersRef.current = []
+
+      filteredLocations.forEach((loc) => {
+        if (!loc.lat || !loc.lng) return
+        const position = { lat: parseFloat(loc.lat), lng: parseFloat(loc.lng) }
+        const marker = new window.google.maps.Marker({
+          position,
+          map: mapRef.current,
+          title: `${getEmployeeName(loc.employeeId)}\n${loc.address}`,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: loc.isActive ? '#2e7d32' : '#d32f2f',
+            fillOpacity: 1,
+            strokeWeight: 1,
+            strokeColor: '#ffffff'
+          }
+        })
+
+        const info = new window.google.maps.InfoWindow({
+          content: `<div style="min-width:160px"><strong>${getEmployeeName(loc.employeeId)}</strong><div style="font-size:12px">${loc.address}</div><div style="font-size:11px;color:#666">${new Date(loc.timestamp).toLocaleString()}</div></div>`
+        })
+        marker.addListener('click', () => info.open({ anchor: marker, map: mapRef.current }))
+
+        markersRef.current.push(marker)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filteredLocations])
+
+    return (
+      <Box sx={{ height: 500, position: 'relative' }}>
+        <Box ref={mapElementRef} sx={{ height: '100%', width: '100%' }} />
       </Box>
-
-      {/* Mock location markers */}
-      {filteredLocations.map((location) => (
-        <Box
-          key={location.id}
-          sx={{
-            position: 'absolute',
-            top: `${Math.random() * 80 + 10}%`,
-            left: `${Math.random() * 80 + 10}%`,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <Avatar
-            src={getEmployeeAvatar(location.employeeId)}
-            sx={{
-              width: 40,
-              height: 40,
-              border: `3px solid ${getStatusColor(location.isActive)}`,
-              cursor: 'pointer'
-            }}
-            title={`${getEmployeeName(location.employeeId)} - ${location.address}`}
-          >
-            <Person />
-          </Avatar>
-        </Box>
-      ))}
-
-      <Typography variant="caption" color="text.secondary">
-        Center: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)} | Zoom: {mapZoom}
-      </Typography>
-    </Box>
-  )
+    )
+  }
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -480,7 +519,7 @@ const LiveLocation = () => {
               <li>Get a Google Maps JavaScript API key from the Google Cloud Console</li>
               <li>Add the Google Maps script to your index.html:</li>
               <code>
-                {`<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>`}
+                {`<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCy5HQVsFRhuA4-zyIeHFbhxUVJ_nYAnfY&libraries=places"></script>`}
               </code>
               <li>Install @googlemaps/react-wrapper or use the Google Maps JavaScript API directly</li>
               <li>Replace the MapComponent with actual Google Maps implementation</li>
