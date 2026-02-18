@@ -1,26 +1,6 @@
 import React, { useState } from 'react'
 import { authAPI } from '../../services/api'
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Container,
-  Avatar,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
-} from '@mui/material'
-import {
-  Person,
-  PersonAdd,
-  Work
-} from '@mui/icons-material'
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, CardFooter, PageContainer, Divider } from '../../components/ui'
 
 const EmployeeSignup = () => {
   const [formData, setFormData] = useState({
@@ -150,246 +130,205 @@ const EmployeeSignup = () => {
   }, [resendTimer])
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      py: 2
-    }}>
-      <Container maxWidth="md">
-        <Card sx={{ 
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          borderRadius: 3,
-          overflow: 'hidden'
-        }}>
-          <CardContent sx={{ p: 4 }}>
-            {/* Header */}
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar sx={{ 
-                bgcolor: '#1976d2', 
-                width: 80, 
-                height: 80, 
-                mx: 'auto', 
-                mb: 2 
-              }}>
-                <PersonAdd sx={{ fontSize: 40 }} />
-              </Avatar>
-              <Typography variant="h4" color="#1976d2" gutterBottom>
-                Employee Registration
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Create a new employee account
-              </Typography>
-            </Box>
+    <PageContainer maxWidth="md" padding="lg" className="pt-20 pb-10">
+      <Card elevated className="w-full">
+        <CardHeader>
+          <CardTitle>Employee Registration</CardTitle>
+          <p className="text-sm text-text-secondary mt-2">Create your employee account to get started</p>
+        </CardHeader>
 
-            <Divider sx={{ mb: 3 }} />
+        <CardContent className="space-y-4">
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="p-4 bg-error-50 border-2 border-error rounded-md">
+              <p className="text-error font-medium text-sm">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="p-4 bg-green-50 border-2 border-success rounded-md">
+              <p className="text-success font-medium text-sm">{success}</p>
+            </div>
+          )}
 
-            {/* Error/Success Messages */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-            {success && (
-              <Alert severity="success" sx={{ mb: 3 }}>
-                {success}
-              </Alert>
-            )}
+          {/* Registration Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* First Name & Last Name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                type="text"
+                label="First Name"
+                placeholder="John"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                required
+              />
+              <Input
+                type="text"
+                label="Last Name"
+                placeholder="Doe"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                required
+              />
+            </div>
 
-            {/* Registration Form */}
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <TextField
-                  fullWidth
-                  label="First Name"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
+            {/* Email */}
+            <Input
+              type="email"
+              label="Email Address"
+              placeholder="john@company.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+
+            {/* OTP Verification */}
+            {otpSent && (
+              <div className="p-4 bg-brand-primary-50 border-2 border-brand-primary rounded-md space-y-3">
+                <p className="text-sm text-text-primary">
+                  Enter the 6-digit code sent to <strong>{formData.email}</strong>
+                </p>
+                <Input
+                  type="text"
+                  label="Verification Code"
+                  placeholder="000000"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.slice(0, 6))}
+                  maxLength="6"
                 />
-                <TextField
-                  fullWidth
-                  label="Last Name"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                />
-              </Box>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    loading={otpLoading}
+                    disabled={otpLoading || otpCode.length < 6}
+                    onClick={handleVerifyOtp}
+                  >
+                    Verify & Complete
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    disabled={resendTimer > 0}
+                    onClick={handleResend}
+                  >
+                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend'}
+                  </Button>
+                </div>
+              </div>
+            )}
 
-              <TextField
-                fullWidth
-                label="Employee Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                sx={{ mb: 2 }}
-                placeholder="mike@company.com"
-              />
+            {/* Employee ID */}
+            <Input
+              type="text"
+              label="Employee ID"
+              placeholder="EMP001"
+              value={formData.employeeId}
+              onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+            />
 
-              {/* OTP input shown after OTP is sent */}
-              {otpSent && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Enter the 6-digit code sent to <strong>{formData.email}</strong>
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Verification Code"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    sx={{ mb: 1 }}
-                  />
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="contained" onClick={handleVerifyOtp} disabled={otpLoading || otpCode.length < 6}>
-                      {otpLoading ? 'Verifying...' : 'Verify & Complete'}
-                    </Button>
-                    <Button variant="outlined" onClick={handleResend} disabled={resendTimer > 0}>
-                      {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend'}
-                    </Button>
-                  </Box>
-                </Box>
-              )}
+            {/* Phone */}
+            <Input
+              type="text"
+              label="Phone Number"
+              placeholder="+1 (555) 123-4567"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
 
-              <TextField
-                fullWidth
-                label="Employee ID"
-                name="employeeId"
-                value={formData.employeeId}
-                onChange={handleChange}
-                sx={{ mb: 2 }}
-                placeholder="EMP001"
-              />
-
-              <TextField
-                fullWidth
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                sx={{ mb: 2 }}
-                placeholder="+1 (555) 123-4567"
-              />
-
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Department</InputLabel>
-                <Select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  label="Department"
-                >
-                  <MenuItem value="Engineering">Engineering</MenuItem>
-                  <MenuItem value="Sales">Sales</MenuItem>
-                  <MenuItem value="Marketing">Marketing</MenuItem>
-                  <MenuItem value="Finance">Finance</MenuItem>
-                  <MenuItem value="Operations">Operations</MenuItem>
-                  <MenuItem value="Customer Support">Customer Support</MenuItem>
-                </Select>
-              </FormControl>
-
-              <TextField
-                fullWidth
-                label="Position"
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                sx={{ mb: 2 }}
-                placeholder="Software Engineer"
-              />
-
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                sx={{ mb: 2 }}
-                helperText="Minimum 8 characters"
-              />
-
-              <TextField
-                fullWidth
-                label="Confirm Password"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                sx={{ mb: 3 }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={loading}
-                sx={{ 
-                  bgcolor: '#1976d2',
-                  '&:hover': { bgcolor: '#1565c0' },
-                  py: 1.5,
-                  fontSize: '16px'
-                }}
+            {/* Department */}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Department</label>
+              <select
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border-2 border-border rounded-md text-text-primary focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary-50 transition-all"
               >
-                {loading ? 'Creating Account...' : 'Create Employee Account'}
-              </Button>
-            </form>
+                <option value="">Select Department</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Finance">Finance</option>
+                <option value="Operations">Operations</option>
+                <option value="Customer Support">Customer Support</option>
+              </select>
+            </div>
 
-            {/* Navigation Links */}
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Already have an employee account?{' '}
-                <Button 
-                  href="/login/employee" 
-                  color="primary"
-                  sx={{ textTransform: 'none' }}
-                >
-                  Sign In
-                </Button>
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Want to register as different role?{' '}
-                <Button 
-                  href="/signup/admin" 
-                  color="primary"
-                  sx={{ textTransform: 'none' }}
-                >
-                  Admin Signup
-                </Button>
-                {' | '}
-                <Button 
-                  href="/signup/hr" 
-                  color="primary"
-                  sx={{ textTransform: 'none' }}
-                >
-                  HR Signup
-                </Button>
-              </Typography>
-            </Box>
+            {/* Position */}
+            <Input
+              type="text"
+              label="Position"
+              placeholder="Software Engineer"
+              value={formData.position}
+              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+            />
 
-            {/* Employee Features Notice */}
-            <Box sx={{ mt: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Work sx={{ fontSize: 16, color: '#1976d2' }} />
-                <Typography variant="body2" color="#1976d2" fontWeight="bold">
-                  Employee Features
-                </Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary">
-                Access your tasks, check in/out, location tracking, and personal profile.
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Container>
-    </Box>
+            {/* Password */}
+            <Input
+              type="password"
+              label="Password"
+              placeholder="Create password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              helperText="At least 8 characters, uppercase, lowercase, and number"
+              required
+            />
+
+            {/* Confirm Password */}
+            <Input
+              type="password"
+              label="Confirm Password"
+              placeholder="Confirm password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              required
+            />
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              fullWidth
+              loading={loading}
+              disabled={loading}
+              className="mt-6"
+            >
+              {loading ? 'Creating Account...' : 'Create Employee Account'}
+            </Button>
+          </form>
+        </CardContent>
+
+        <Divider />
+
+        <CardFooter className="flex flex-col gap-4 text-center">
+          <p className="text-sm text-text-secondary">
+            Already have an account?{' '}
+            <a href="/login/employee" className="text-brand-primary font-medium hover:text-brand-primary-dark">
+              Sign In
+            </a>
+          </p>
+          <p className="text-sm text-text-secondary">
+            Register as different role?{' '}
+            <a href="/signup/admin" className="text-brand-primary font-medium hover:text-brand-primary-dark">
+              Admin
+            </a>
+            {' | '}
+            <a href="/signup/hr" className="text-brand-primary font-medium hover:text-brand-primary-dark">
+              HR
+            </a>
+          </p>
+
+          {/* Features Notice */}
+          <div className="mt-4 p-3 bg-brand-primary-50 rounded-md border-l-4 border-brand-primary">
+            <h4 className="text-sm font-bold text-brand-primary mb-1">Employee Features</h4>
+            <p className="text-xs text-text-secondary">
+              Check in/out, location tracking, task management, and personal profile access.
+            </p>
+          </div>
+        </CardFooter>
+      </Card>
+    </PageContainer>
   )
 }
 

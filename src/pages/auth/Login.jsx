@@ -1,31 +1,14 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  InputAdornment,
-  IconButton
-} from '@mui/material'
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock
-} from '@mui/icons-material'
 import { useAuth } from '../../contexts/AuthContext'
+import { PageContainer } from '../../components/ui/PageContainer'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card'
+import Input from '../../components/ui/Input'
+import Button from '../../components/ui/Button'
+import { Divider } from '../../components/ui/PageContainer'
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const { login, isLoading } = useAuth()
   const navigate = useNavigate()
@@ -85,118 +68,66 @@ const Login = () => {
     }
   }
 
-  const handleTogglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
-  }
-
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <CardContent>
-        <Typography variant="h5" component="h2" gutterBottom textAlign="center">
-          Sign In
-        </Typography>
-        
-        <Typography variant="body2" color="text.secondary" textAlign="center" mb={3}>
-          Enter your credentials to access the system
-        </Typography>
+    <PageContainer maxWidth="sm" padding="lg" className="pt-20 pb-8 min-h-screen flex items-center justify-center">
+      <Card elevated className="w-full">
+        <CardHeader>
+          <CardTitle className="text-center">Sign In</CardTitle>
+          <p className="text-center text-sm text-text-secondary mt-2">Enter your credentials to access the system</p>
+        </CardHeader>
 
-        {errors.general && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {errors.general}
-          </Alert>
-        )}
-
-        <TextField
-          fullWidth
-          label="Email Address"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          error={!!errors.email}
-          helperText={errors.email}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Email />
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
-
-        <TextField
-          fullWidth
-          label="Password"
-          name="password"
-          type={showPassword ? 'text' : 'password'}
-          value={formData.password}
-          onChange={handleChange}
-          error={!!errors.password}
-          helperText={errors.password}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Lock />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={handleTogglePasswordVisibility}
-                  edge="end"
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
-
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          size="large"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            'Sign In'
+        <CardContent className="space-y-4">
+          {errors.general && (
+            <div className="p-3 bg-error-50 border-2 border-error rounded-md">
+              <p className="text-sm text-error">{errors.general}</p>
+            </div>
           )}
-        </Button>
 
-        <Box textAlign="center">
-          <Typography variant="body2" color="text.secondary">
-            Don't have an account?{' '}
-            <Link to="/register" style={{ textDecoration: 'none' }}>
-              Sign Up
-            </Link>
-          </Typography>
-        </Box>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              type="email"
+              label="Email Address"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              placeholder="you@company.com"
+              disabled={isLoading}
+            />
 
-        <Box mt={3}>
-          <Typography variant="caption" display="block" textAlign="center" color="text.secondary">
-            Demo Credentials:
-          </Typography>
-          <Typography variant="caption" display="block" textAlign="center">
-            Admin: admin@company.com / admin123
-          </Typography>
-          <Typography variant="caption" display="block" textAlign="center">
-            HR: hr@company.com / hr123
-          </Typography>
-          <Typography variant="caption" display="block" textAlign="center">
-            Employee: mike@company.com / employee123
-          </Typography>
-        </Box>
-      </CardContent>
-    </Box>
+            <Input
+              type="password"
+              label="Password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              placeholder="Enter your password"
+              disabled={isLoading}
+            />
+
+            <Button type="submit" variant="primary" size="md" fullWidth disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <p className="text-sm text-text-secondary">
+              Don't have an account? <Link to="/register" className="text-brand-primary hover:underline">Sign Up</Link>
+            </p>
+          </div>
+
+          <Divider />
+
+          <div className="text-center text-sm text-text-secondary space-y-1">
+            <div>Demo Credentials:</div>
+            <div>Admin: admin@company.com / admin123</div>
+            <div>HR: hr@company.com / hr123</div>
+            <div>Employee: mike@company.com / employee123</div>
+          </div>
+        </CardContent>
+      </Card>
+    </PageContainer>
   )
 }
 

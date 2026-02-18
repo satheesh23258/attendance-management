@@ -1,19 +1,6 @@
 import React, { useState } from 'react'
 import { authAPI } from '../../services/api'
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Container,
-  Avatar,
-  Divider,
-  InputAdornment,
-} from '@mui/material'
-import { LockOpen, Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, CardFooter, PageContainer, Divider } from '../../components/ui'
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -81,178 +68,99 @@ const ResetPassword = () => {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        py: 2,
-      }}
-    >
-      <Container maxWidth="sm">
-        <Card
-          sx={{
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            borderRadius: 3,
-            overflow: 'hidden',
-          }}
-        >
-          <CardContent sx={{ p: 4 }}>
-            {/* Header */}
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar
-                sx={{
-                  bgcolor: '#667eea',
-                  width: 80,
-                  height: 80,
-                  mx: 'auto',
-                  mb: 2,
-                }}
-              >
-                <LockOpen sx={{ fontSize: 40 }} />
-              </Avatar>
-              <Typography variant="h4" color="#667eea" gutterBottom>
-                Reset Password
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Enter the OTP and your new password
-              </Typography>
-            </Box>
+    <PageContainer maxWidth="sm" padding="lg" className="pt-20 pb-10 min-h-screen flex items-center justify-center">
+      <Card elevated className="w-full">
+        <CardHeader className="bg-gradient-to-r from-brand-primary to-brand-secondary">
+          <div className="text-center">
+            <div className="text-4xl mb-3">🔓</div>
+            <CardTitle className="text-white">Reset Your Password</CardTitle>
+            <p className="text-sm text-brand-primary-100 mt-2">
+              Enter the OTP and your new password
+            </p>
+          </div>
+        </CardHeader>
 
-            <Divider sx={{ mb: 3 }} />
+        <CardContent className="space-y-5">
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="p-4 bg-error-50 border-2 border-error rounded-md">
+              <p className="text-sm text-error font-medium">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="p-4 bg-success-50 border-2 border-success rounded-md">
+              <p className="text-sm text-success font-medium">{success}</p>
+            </div>
+          )}
 
-            {/* Error/Success Messages */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-            {success && (
-              <Alert severity="success" sx={{ mb: 3 }}>
-                {success}
-              </Alert>
-            )}
+          {!success && (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <Input
+                type="email"
+                label="Email Address"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@company.com"
+                required
+              />
 
-            {!success && (
-              <form onSubmit={handleSubmit}>
-                <TextField
-                  fullWidth
-                  label="Email Address"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 2 }}
-                  placeholder="you@company.com"
-                />
+              <Input
+                type="text"
+                label="OTP Code"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+                placeholder="000000"
+                maxLength="6"
+                required
+              />
 
-                <TextField
-                  fullWidth
-                  label="OTP Code"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 2 }}
-                  placeholder="000000"
-                  maxLength="6"
-                />
+              <Input
+                type="password"
+                label="New Password"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                helperText="Min 8 chars, 1 uppercase, 1 lowercase, 1 number"
+                required
+              />
 
-                <TextField
-                  fullWidth
-                  label="New Password"
-                  name="newPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.newPassword}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 2 }}
-                  helperText="Min 8 chars, 1 uppercase, 1 lowercase, 1 number"
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Button
-                          size="small"
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </Button>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+              <Input
+                type="password"
+                label="Confirm Password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
 
-                <TextField
-                  fullWidth
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Button
-                          size="small"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          edge="end"
-                        >
-                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                        </Button>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  disabled={loading}
-                  sx={{
-                    bgcolor: '#667eea',
-                    '&:hover': { bgcolor: '#764ba2' },
-                    py: 1.5,
-                    fontSize: '16px',
-                  }}
-                >
-                  {loading ? 'Resetting Password...' : 'Reset Password'}
-                </Button>
-              </form>
-            )}
-
-            {/* Back to Login Link */}
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Button
-                href="/login"
-                startIcon={<ArrowBack />}
-                color="primary"
-                sx={{ textTransform: 'none' }}
+                type="submit"
+                variant="primary"
+                size="md"
+                fullWidth
+                disabled={loading}
               >
-                Back to Login
+                {loading ? 'Resetting Password...' : 'Reset Password'}
               </Button>
-            </Box>
+            </form>
+          )}
+        </CardContent>
 
-            {/* Security Notice */}
-            <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                🔒 Your password will be securely hashed before storage
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                ⏱️ OTP code expires in 5 minutes
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Container>
-    </Box>
+        <Divider />
+
+        <CardFooter className="flex flex-col items-center gap-3">
+          <a href="/login" className="text-sm text-brand-primary hover:text-brand-secondary transition-colors">
+            ← Back to Login
+          </a>
+          <div className="text-xs text-brand-secondary text-center space-y-1">
+            <p>🔒 Your password will be securely hashed before storage</p>
+            <p>⏱️ OTP code expires in 5 minutes</p>
+          </div>
+        </CardFooter>
+      </Card>
+    </PageContainer>
   )
 }
 

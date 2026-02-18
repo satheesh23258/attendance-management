@@ -1,21 +1,7 @@
 import React from 'react'
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Container,
-  Avatar,
-  Grid,
-  Paper
-} from '@mui/material'
-import {
-  AdminPanelSettings,
-  People,
-  Person,
-  PersonAdd
-} from '@mui/icons-material'
+import { PageContainer } from '../../components/ui/PageContainer'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 const SignupPortal = () => {
   const signupOptions = [
@@ -52,151 +38,60 @@ const SignupPortal = () => {
   ]
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      py: 4
-    }}>
-      <Container maxWidth="lg">
-        {/* Header */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Avatar sx={{ 
-            bgcolor: 'white', 
-            width: 80, 
-            height: 80, 
-            mx: 'auto', 
-            mb: 3 
-          }}>
-            <PersonAdd sx={{ fontSize: 40, color: '#667eea' }} />
-          </Avatar>
-          <Typography variant="h3" color="white" gutterBottom fontWeight="bold">
-            Create Your Account
-          </Typography>
-          <Typography variant="h6" color="white" sx={{ opacity: 0.9 }}>
-            Choose your role to register for the system
-          </Typography>
-        </Box>
+    <PageContainer maxWidth="4xl" padding="lg" className="pt-20 pb-12">
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center mb-4">
+          <span className="text-3xl font-bold text-brand-primary">A</span>
+        </div>
+        <h1 className="text-3xl font-bold text-text-primary">Create Your Account</h1>
+        <p className="text-sm text-text-secondary mt-2">Choose your role to register for the system</p>
+      </div>
 
-        {/* Signup Options */}
-        <Grid container spacing={4}>
-          {signupOptions.map((option, index) => (
-            <Grid item xs={12} md={4} key={index}>
-              <Card sx={{ 
-                height: '100%',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
-                },
-                borderRadius: 3,
-                overflow: 'hidden'
-              }}>
-                <CardContent sx={{ p: 3 }}>
-                  {/* Icon and Title */}
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <Avatar sx={{ 
-                      bgcolor: option.color, 
-                      width: 70, 
-                      height: 70, 
-                      mx: 'auto', 
-                      mb: 2 
-                    }}>
-                      {option.icon}
-                    </Avatar>
-                    <Typography variant="h5" color={option.color} gutterBottom fontWeight="bold">
-                      {option.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {option.description}
-                    </Typography>
-                  </Box>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {signupOptions.map((option, index) => (
+          <Card key={index} elevated className="overflow-hidden">
+            <CardContent>
+              <div className="text-center mb-3">
+                <div className="w-16 h-16 rounded-md mx-auto mb-3" style={{ background: option.color }}>
+                  <div className="w-full h-full flex items-center justify-center text-white">{option.icon}</div>
+                </div>
+                <h3 className="text-lg font-bold" style={{ color: option.color }}>{option.title}</h3>
+                <p className="text-sm text-text-secondary">{option.description}</p>
+              </div>
 
-                  {/* Features */}
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      <strong>Account Features:</strong>
-                    </Typography>
-                    {option.features.map((feature, idx) => (
-                      <Typography variant="caption" color="text.secondary" key={idx} sx={{ display: 'block', mb: 0.5 }}>
-                        • {feature}
-                      </Typography>
-                    ))}
-                  </Box>
+              <div className="mb-3">
+                <p className="text-sm text-text-secondary font-medium">Account Features:</p>
+                {option.features.map((feature, idx) => (
+                  <p className="text-xs text-text-secondary" key={idx}>• {feature}</p>
+                ))}
+              </div>
 
-                  {/* Requirements */}
-                  <Box sx={{ mb: 3, p: 2, bgcolor: option.bgColor, borderRadius: 1 }}>
-                    <Typography variant="caption" color={option.color} gutterBottom>
-                      <strong>Requirements:</strong>
-                    </Typography>
-                    {option.requirements.map((req, idx) => (
-                      <Typography variant="caption" color="text.secondary" key={idx} sx={{ display: 'block', mb: 0.5 }}>
-                        ✓ {req}
-                      </Typography>
-                    ))}
-                  </Box>
+              <div className="mb-4 p-3 rounded-md" style={{ background: option.bgColor }}>
+                <p className="text-sm font-medium" style={{ color: option.color }}>Requirements:</p>
+                {option.requirements.map((req, idx) => (
+                  <p className="text-xs text-text-secondary" key={idx}>✓ {req}</p>
+                ))}
+              </div>
 
-                  {/* Signup Button */}
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    href={option.route}
-                    sx={{ 
-                      bgcolor: option.color,
-                      '&:hover': { bgcolor: option.color, opacity: 0.9 },
-                      py: 1.5,
-                      fontSize: '16px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Sign Up
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+              <Button href={option.route} variant="outline" fullWidth>
+                Sign Up
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        {/* Important Notice */}
-        <Box sx={{ mt: 6, textAlign: 'center' }}>
-          <Paper sx={{ 
-            p: 3, 
-            bgcolor: 'rgba(255,255,255,0.1)', 
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.2)'
-          }}>
-            <Typography variant="h6" color="white" gutterBottom>
-              Important Notice
-            </Typography>
-            <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-              Account registration requires approval from your department administrator. 
-              Please ensure you have the necessary permissions before proceeding with registration.
-            </Typography>
-          </Paper>
-        </Box>
+      <div className="mt-8 text-center">
+        <div className="bg-surface p-4 rounded-md">
+          <h4 className="text-lg font-medium">Important Notice</h4>
+          <p className="text-sm text-text-secondary">Account registration requires approval from your department administrator. Please ensure you have the necessary permissions before proceeding with registration.</p>
+        </div>
+      </div>
 
-        {/* Login Links */}
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-            Already have an account?{' '}
-            <Button 
-              href="/login" 
-              sx={{ 
-                color: 'white', 
-                textTransform: 'none',
-                textDecoration: 'underline',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-              }}
-            >
-              Sign In Here
-            </Button>
-          </Typography>
-        </Box>
-      </Container>
-    </Box>
+      <div className="mt-6 text-center">
+        <p className="text-sm text-text-secondary">Already have an account? <a href="/login" className="text-brand-primary hover:underline">Sign In Here</a></p>
+      </div>
+    </PageContainer>
   )
 }
 

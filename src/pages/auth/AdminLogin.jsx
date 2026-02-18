@@ -1,22 +1,5 @@
 import React, { useState } from 'react'
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Container,
-  Avatar,
-  Divider
-} from '@mui/material'
-import {
-  AdminPanelSettings,
-  Security,
-  Lock
-} from '@mui/icons-material'
-
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, CardFooter, PageContainer, Divider } from '../../components/ui'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -65,152 +48,97 @@ const AdminLogin = () => {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <Container maxWidth="sm">
-        <Card sx={{ 
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          borderRadius: 3,
-          overflow: 'hidden'
-        }}>
-          <CardContent sx={{ p: 4 }}>
-            {/* Header */}
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar sx={{ 
-                bgcolor: '#d32f2f', 
-                width: 80, 
-                height: 80, 
-                mx: 'auto', 
-                mb: 2 
-              }}>
-                <AdminPanelSettings sx={{ fontSize: 40 }} />
-              </Avatar>
-              <Typography variant="h4" color="#d32f2f" gutterBottom>
-                Admin Portal
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                System Administrator Login
-              </Typography>
-            </Box>
+    <PageContainer maxWidth="sm" padding="lg" className="pt-20 pb-10 min-h-screen flex items-center justify-center">
+      <Card elevated className="w-full">
+        <CardHeader>
+          <CardTitle>Admin Portal</CardTitle>
+          <p className="text-sm text-text-secondary mt-2">System Administrator Login</p>
+        </CardHeader>
 
-            <Divider sx={{ mb: 3 }} />
+        <CardContent className="space-y-4">
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="p-4 bg-error-50 border-2 border-error rounded-md">
+              <p className="text-error font-medium text-sm">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="p-4 bg-green-50 border-2 border-success rounded-md">
+              <p className="text-success font-medium text-sm">{success}</p>
+            </div>
+          )}
 
-            {/* Error/Success Messages */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-            {success && (
-              <Alert severity="success" sx={{ mb: 3 }}>
-                {success}
-              </Alert>
-            )}
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              type="email"
+              label="Email Address"
+              placeholder="admin@company.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
 
-            {/* Login Form */}
-            <form onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                label="Admin Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                sx={{ mb: 3 }}
-                placeholder="admin@company.com"
-              />
-              
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-text-primary">Password</label>
+                <a href="/forgot-password" className="text-xs text-error hover:text-error-dark font-medium">
+                  Forgot?
+                </a>
+              </div>
+              <Input
                 type="password"
+                placeholder="Enter password"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                sx={{ mb: 1 }}
-                placeholder="Enter your password"
               />
-              
-              <Box sx={{ textAlign: 'right', mb: 3 }}>
-                <Button
-                  href="/forgot-password"
-                  size="small"
-                  sx={{ textTransform: 'none', color: '#d32f2f' }}
-                >
-                  Forgot Password?
-                </Button>
-              </Box>
+            </div>
 
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={loading}
-                sx={{ 
-                  bgcolor: '#d32f2f',
-                  '&:hover': { bgcolor: '#b71c1c' },
-                  py: 1.5,
-                  fontSize: '16px'
-                }}
-              >
-                {loading ? 'Signing in...' : 'Sign In as Admin'}
-              </Button>
-            </form>
+            <Button
+              type="submit"
+              variant="danger"
+              size="md"
+              fullWidth
+              loading={loading}
+              disabled={loading}
+              className="mt-6"
+            >
+              {loading ? 'Signing in...' : 'Sign In as Admin'}
+            </Button>
+          </form>
 
-            {/* Demo Credentials */}
-            <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                <strong>Demo Credentials:</strong>
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email: admin@company.com
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Password: admin123
-              </Typography>
-            </Box>
+          {/* Demo Credentials */}
+          <div className="mt-4 p-3 bg-surface rounded-md border-2 border-border">
+            <h3 className="text-sm font-bold text-text-primary mb-2">Demo Credentials</h3>
+            <p className="text-xs text-text-secondary">Email: admin@company.com</p>
+            <p className="text-xs text-text-secondary">Password: admin123</p>
+          </div>
+        </CardContent>
 
-            {/* Navigation Links */}
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Not an admin?{' '}
-                <Button 
-                  href="/login/hr" 
-                  color="primary"
-                  sx={{ textTransform: 'none' }}
-                >
-                  HR Login
-                </Button>
-                {' | '}
-                <Button 
-                  href="/login/employee" 
-                  color="primary"
-                  sx={{ textTransform: 'none' }}
-                >
-                  Employee Login
-                </Button>
-              </Typography>
-            </Box>
+        <Divider />
 
-            {/* Security Notice */}
-            <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Security sx={{ fontSize: 16, color: '#666' }} />
-              <Typography variant="caption" color="text.secondary">
-                Secure admin access with full system privileges
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Container>
-    </Box>
+        <CardFooter className="flex flex-col gap-4 text-center">
+          <p className="text-sm text-text-secondary">
+            Not an admin?
+            <a href="/login/hr" className="text-brand-primary font-medium hover:text-brand-primary-dark ml-1">
+              HR Login
+            </a>
+            {' | '}
+            <a href="/login/employee" className="text-brand-primary font-medium hover:text-brand-primary-dark ml-1">
+              Employee Login
+            </a>
+          </p>
+
+          <div className="flex items-start gap-2 text-xs text-text-secondary">
+            <svg className="w-4 h-4 text-error flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L9.9 4.05a7 7 0 01-4.85-4.05zM9.5 1.937c-4.84.317-8.75 4.25-8.75 9.063 0 .563.036 1.12.103 1.67l7.568-7.568c-.427-.305-.87-.56-1.32-.745z" clipRule="evenodd" />
+            </svg>
+            <span>Secure admin access with full system privileges</span>
+          </div>
+        </CardFooter>
+      </Card>
+    </PageContainer>
   )
 }
 

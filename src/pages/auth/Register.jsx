@@ -1,31 +1,11 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  InputAdornment,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
-} from '@mui/material'
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock,
-  Person,
-  Phone,
-  Business
-} from '@mui/icons-material'
 import { authAPI } from '../../services/api'
+import { PageContainer } from '../../components/ui/PageContainer'
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card'
+import Input from '../../components/ui/Input'
+import Button from '../../components/ui/Button'
+import { Divider } from '../../components/ui/PageContainer'
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -143,194 +123,101 @@ const Register = () => {
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <CardContent>
-        <Typography variant="h5" component="h2" gutterBottom textAlign="center">
-          Sign Up
-        </Typography>
-        
-        <Typography variant="body2" color="text.secondary" textAlign="center" mb={3}>
-          Create your account to get started
-        </Typography>
+    <PageContainer maxWidth="md" padding="lg" className="pt-20 pb-8">
+      <Card elevated className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-center">Sign Up</CardTitle>
+          <p className="text-center text-sm text-text-secondary mt-2">Create your account to get started</p>
+        </CardHeader>
 
-        {errors.general && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {errors.general}
-          </Alert>
-        )}
-
-        <TextField
-          fullWidth
-          label="Full Name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          error={!!errors.name}
-          helperText={errors.name}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Person />
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
-
-        <TextField
-          fullWidth
-          label="Email Address"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          error={!!errors.email}
-          helperText={errors.email}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Email />
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
-
-        <TextField
-          fullWidth
-          label="Phone Number"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          error={!!errors.phone}
-          helperText={errors.phone}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Phone />
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
-
-        <FormControl fullWidth margin="normal" error={!!errors.department}>
-          <InputLabel>Department</InputLabel>
-          <Select
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            label="Department"
-            startAdornment={
-              <InputAdornment position="start">
-                <Business />
-              </InputAdornment>
-            }
-            disabled={isLoading}
-          >
-            {departments.map((dept) => (
-              <MenuItem key={dept} value={dept}>
-                {dept}
-              </MenuItem>
-            ))}
-          </Select>
-          {errors.department && (
-            <Typography variant="caption" color="error">
-              {errors.department}
-            </Typography>
+        <CardContent className="space-y-4">
+          {errors.general && (
+            <div className="p-3 bg-error-50 border-2 border-error rounded-md">
+              <p className="text-sm text-error">{errors.general}</p>
+            </div>
           )}
-        </FormControl>
 
-        <TextField
-          fullWidth
-          label="Password"
-          name="password"
-          type={showPassword ? 'text' : 'password'}
-          value={formData.password}
-          onChange={handleChange}
-          error={!!errors.password}
-          helperText={errors.password}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Lock />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={handleTogglePasswordVisibility}
-                  edge="end"
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="Full Name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              error={errors.name}
+              placeholder="Your full name"
+              disabled={isLoading}
+            />
 
-        <TextField
-          fullWidth
-          label="Confirm Password"
-          name="confirmPassword"
-          type={showConfirmPassword ? 'text' : 'password'}
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          error={!!errors.confirmPassword}
-          helperText={errors.confirmPassword}
-          margin="normal"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Lock />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle confirm password visibility"
-                  onClick={handleToggleConfirmPasswordVisibility}
-                  edge="end"
-                >
-                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          disabled={isLoading}
-        />
+            <Input
+              type="email"
+              label="Email Address"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              placeholder="you@company.com"
+              disabled={isLoading}
+            />
 
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          size="large"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            'Sign Up'
-          )}
-        </Button>
+            <Input
+              label="Phone Number"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              error={errors.phone}
+              placeholder="e.g. +1 555 555 5555"
+              disabled={isLoading}
+            />
 
-        <Box textAlign="center">
-          <Typography variant="body2" color="text.secondary">
-            Already have an account?{' '}
-            <Link to="/login" style={{ textDecoration: 'none' }}>
-              Sign In
-            </Link>
-          </Typography>
-        </Box>
-      </CardContent>
-    </Box>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Department</label>
+              <select
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-white border-2 rounded-md text-text-primary"
+                disabled={isLoading}
+              >
+                <option value="">Select department</option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              {errors.department && <p className="text-sm text-error mt-2">{errors.department}</p>}
+            </div>
+
+            <Input
+              type="password"
+              label="Password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              helperText="Min 6 characters"
+              disabled={isLoading}
+            />
+
+            <Input
+              type="password"
+              label="Confirm Password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={errors.confirmPassword}
+              disabled={isLoading}
+            />
+
+            <Button type="submit" variant="primary" size="md" fullWidth disabled={isLoading}>
+              {isLoading ? 'Creating account...' : 'Sign Up'}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <p className="text-sm text-text-secondary">Already have an account? <Link to="/login" className="text-brand-primary hover:underline">Sign In</Link></p>
+          </div>
+        </CardContent>
+      </Card>
+    </PageContainer>
   )
 }
 
