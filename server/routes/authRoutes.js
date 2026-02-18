@@ -4,12 +4,13 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
 import Otp from '../models/Otp.js';
-import nodemailer from 'nodemailer';
+import { sendOtpEmail } from '../config/email.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.VITE_JWT_SECRET || process.env.JWT_SECRET || 'demo-secret-key';
 
 // POST /api/auth/register
+// Step 1: Create unverified user account and send OTP
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, role, department, employeeId, phone } = req.body;
@@ -22,60 +23,58 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const empId = employeeId || `EMP${Date.now().toString().slice(-5)}`;
+    
+    // Create user but mark as unverified
     const user = await User.create({
       name,
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role: role || 'employee',
       status: 'active',
+      isVerified: false, // Not verified until OTP is confirmed
       department: department || '',
       employeeId: empId,
       phone: phone || '',
       branchName: req.body.branchName || '',
     });
 
-    // Also add to employees collection for consistency
-    await Employee.findOneAndUpdate(
-      { email: user.email },
-      {
-        name,
-        email: user.email,
-        role: user.role,
-        department: department || 'Operations',
-        phone: phone || '',
-        employeeId: empId,
-        isActive: true,
-        joinDate: new Date().toISOString().split('T')[0],
-        branchName: req.body.branchName || '',
-      },
-      { upsert: true }
-    );
+    // Send OTP to email
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    
+    await Otp.create({
+      email: user.email,
+      code: otp,
+      used: false,
+      expiresAt: otpExpiry,
+    });
 
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    const userResponse = user.toJSON ? user.toJSON() : user.toObject();
-    delete userResponse.password;
-    delete userResponse.__v;
+    const emailResult = await sendOtpEmail(user.email, otp);
+    
+    if (!emailResult.success && process.env.NODE_ENV === 'production') {
+      // In production, if email fails, delete the user and return error
+      await User.deleteOne({ _id: user._id });
+      return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
+    }
 
     res.status(201).json({
-      token,
-      user: {
-        id: user._id.toString(),
-        ...userResponse,
-      },
-      message: 'Account created successfully',
+      message: 'Account created. Please verify your email with the OTP sent to your inbox.',
+      email: user.email,
+      userId: user._id.toString(),
+      requiresVerification: true,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -161,7 +160,6 @@ router.get('/me', async (req, res) => {
 
 export default router;
 
-// --- OTP endpoints ---
 // POST /api/auth/send-otp { email }
 router.post('/send-otp', async (req, res) => {
   try {
@@ -170,69 +168,117 @@ router.post('/send-otp', async (req, res) => {
 
     const normalized = email.toLowerCase().trim();
 
-    // rate-limit: prevent spamming by checking recent unused OTP
+    // Rate limit: prevent spamming
     const recent = await Otp.findOne({ email: normalized, used: false }).sort({ createdAt: -1 });
     if (recent && recent.expiresAt > new Date() && (Date.now() - new Date(recent.createdAt).getTime()) < 60000) {
-      return res.status(429).json({ message: 'OTP recently sent. Please wait a moment.' });
+      return res.status(429).json({ message: 'OTP recently sent. Please wait a moment before requesting another.' });
     }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await Otp.create({ email: normalized, code, expiresAt });
 
-    // Setup transporter from env
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpPort = process.env.SMTP_PORT;
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
+    const emailResult = await sendOtpEmail(normalized, code);
 
-    if (smtpHost && smtpPort && smtpUser && smtpPass) {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: parseInt(smtpPort, 10),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: { user: smtpUser, pass: smtpPass }
-      });
-
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.VITE_EMAIL_FROM || 'noreply@company.com',
-        to: normalized,
-        subject: 'Your verification code',
-        text: `Your verification code is ${code}. It expires in 10 minutes.`,
-        html: `<p>Your verification code is <strong>${code}</strong>. It expires in 10 minutes.</p>`
-      };
-
-      await transporter.sendMail(mailOptions);
-      return res.json({ message: 'OTP sent to email' });
+    if (!emailResult.success) {
+      console.error('Failed to send OTP email:', emailResult.error);
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
+      }
     }
 
-    // If SMTP not configured, log the OTP for development and return success
-    console.warn('SMTP not configured — OTP for', normalized, 'is', code);
-    return res.json({ message: 'OTP generated (check server logs in development)' });
+    return res.json({ 
+      message: 'OTP sent to email',
+      email: normalized,
+      expiresIn: 300, // 5 minutes in seconds
+    });
   } catch (err) {
-    console.error('send-otp error', err);
+    console.error('send-otp error:', err);
     return res.status(500).json({ message: 'Failed to send OTP' });
   }
 });
 
-// POST /api/auth/verify-otp { email, code }
+// POST /api/auth/verify-otp
+// Step 2: Verify OTP and mark user as verified
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, code } = req.body;
-    if (!email || !code) return res.status(400).json({ message: 'Email and code are required' });
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Email and code are required' });
+    }
 
     const normalized = email.toLowerCase().trim();
-    const otp = await Otp.findOne({ email: normalized, code, used: false });
-    if (!otp) return res.status(400).json({ message: 'Invalid code' });
-    if (otp.expiresAt < new Date()) return res.status(400).json({ message: 'Code expired' });
+    
+    // Find valid OTP
+    const otpRecord = await Otp.findOne({ 
+      email: normalized, 
+      code: code.toString(), 
+      used: false 
+    });
+    
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid OTP code' });
+    }
+    
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'OTP code has expired' });
+    }
 
-    otp.used = true;
-    await otp.save();
+    // Mark OTP as used
+    otpRecord.used = true;
+    await otpRecord.save();
 
-    return res.json({ message: 'Email verified' });
+    // Mark user as verified
+    const user = await User.findOne({ email: normalized });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email already verified' });
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    // Also add/update employee record
+    await Employee.findOneAndUpdate(
+      { email: user.email },
+      {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department || 'Operations',
+        phone: user.phone || '',
+        employeeId: user.employeeId,
+        isActive: true,
+        joinDate: new Date().toISOString().split('T')[0],
+        branchName: user.branchName || '',
+      },
+      { upsert: true }
+    );
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const userResponse = user.toJSON ? user.toJSON() : user.toObject();
+    delete userResponse.password;
+
+    return res.json({
+      message: 'Email verified successfully',
+      token,
+      user: {
+        id: user._id.toString(),
+        ...userResponse,
+      },
+    });
   } catch (err) {
-    console.error('verify-otp error', err);
+    console.error('verify-otp error:', err);
     return res.status(500).json({ message: 'Failed to verify OTP' });
   }
 });

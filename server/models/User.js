@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active',
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     employeeId: {
       type: String,
       trim: true,
