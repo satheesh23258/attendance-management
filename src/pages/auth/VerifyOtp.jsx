@@ -33,7 +33,7 @@ import toast from 'react-hot-toast'
 const VerifyOtp = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  
+
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -71,12 +71,12 @@ const VerifyOtp = () => {
       // Map to real authAPI call
       await authAPI.verifyOtp({ identifier, otp, purpose })
       toast.success('Security identity confirmed!')
-      
+
       // Redirect based on purpose
       if (purpose === 'reset_password') {
-          navigate('/reset-password', { state: { ...stateData } })
+        navigate('/reset-password', { state: { ...stateData } })
       } else {
-          navigate('/') // default to login login portal
+        navigate('/') // default to login login portal
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid or expired verification code.')
@@ -98,8 +98,8 @@ const VerifyOtp = () => {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       background: '#1B5E20', // Matching HR Portal dark green
       display: 'flex',
       alignItems: 'center',
@@ -107,8 +107,8 @@ const VerifyOtp = () => {
       py: 4
     }}>
       <Container maxWidth="sm">
-        <Card sx={{ 
-          boxShadow: '0 30px 90px rgba(0,0,0,0.07)', 
+        <Card sx={{
+          boxShadow: '0 30px 90px rgba(0,0,0,0.07)',
           borderRadius: 10, // Extreme rounded corners for ultra-modern look
           overflow: 'hidden',
           border: '1px solid rgba(0,0,0,0.02)'
@@ -116,30 +116,30 @@ const VerifyOtp = () => {
           <CardContent sx={{ p: { xs: 4, md: 7 } }}>
             {/* Header / Security Badge */}
             <Box sx={{ textAlign: 'center', mb: 5 }}>
-              <Avatar sx={{ 
-                bgcolor: '#000000', 
-                color: '#FFFFFF', 
-                width: 90, 
-                height: 90, 
-                mx: 'auto', 
+              <Avatar sx={{
+                bgcolor: '#000000',
+                color: '#FFFFFF',
+                width: 90,
+                height: 90,
+                mx: 'auto',
                 mb: 4,
                 boxShadow: '0 10px 20px rgba(0,0,0,0.15)'
               }}>
                 <VpnKeyOutlined sx={{ fontSize: 45 }} />
               </Avatar>
-              <Typography variant="h3" sx={{ 
-                fontWeight: 900, 
-                color: '#1a1a1a', 
+              <Typography variant="h3" sx={{
+                fontWeight: 900,
+                color: '#1a1a1a',
                 letterSpacing: '-2px',
-                mb: 1.5 
+                mb: 1.5
               }}>
                 Identity Check
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                 <FiberManualRecord sx={{ fontSize: 10, color: '#00c853' }} />
-                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                   Two-Factor Authentication Active
-                 </Typography>
+                <FiberManualRecord sx={{ fontSize: 10, color: '#00c853' }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                  Two-Factor Authentication Active
+                </Typography>
               </Box>
             </Box>
 
@@ -156,12 +156,12 @@ const VerifyOtp = () => {
             )}
 
             <Box component="form" onSubmit={handleVerify} noValidate>
-              <TextField 
-                fullWidth 
+              <TextField
+                fullWidth
                 placeholder="000000"
-                value={otp} 
-                onChange={(e) => setOtp(e.target.value)} 
-                sx={{ 
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                sx={{
                   mb: 2,
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 5,
@@ -183,31 +183,31 @@ const VerifyOtp = () => {
                   )
                 }}
               />
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 5 }}>
-                 <Button 
-                   onClick={handleResend} 
-                   disabled={resendTimer > 0}
-                   startIcon={<TimerOutlined />}
-                   sx={{ 
-                     textTransform: 'none', 
-                     color: resendTimer > 0 ? 'text.disabled' : '#00c853',
-                     fontWeight: 700,
-                     fontSize: '14px'
-                   }}
-                 >
-                   {resendTimer > 0 ? `Retry transmission in ${resendTimer}s` : 'Request New Security PIN'}
-                 </Button>
+                <Button
+                  onClick={handleResend}
+                  disabled={resendTimer > 0}
+                  startIcon={<TimerOutlined />}
+                  sx={{
+                    textTransform: 'none',
+                    color: resendTimer > 0 ? 'text.disabled' : '#00c853',
+                    fontWeight: 700,
+                    fontSize: '14px'
+                  }}
+                >
+                  {resendTimer > 0 ? `Retry transmission in ${resendTimer}s` : 'Request New Security PIN'}
+                </Button>
               </Box>
 
-              <Button 
+              <Button
                 type="submit"
-                variant="contained" 
-                fullWidth 
+                variant="contained"
+                fullWidth
                 disabled={loading || !otp}
-                sx={{ 
-                  py: 2.5, 
-                  bgcolor: '#000000', 
+                sx={{
+                  py: 2.5,
+                  bgcolor: '#000000',
                   color: '#FFFFFF',
                   fontWeight: 900,
                   fontSize: '18px',
@@ -223,10 +223,10 @@ const VerifyOtp = () => {
             </Box>
 
             <Box sx={{ mt: 6, textAlign: 'center', opacity: 0.5 }}>
-               <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 2 }}>
-                  <LockResetOutlined sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
-                  SECURE VERIFICATION SHIELD
-               </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: 2 }}>
+                <LockResetOutlined sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+                SECURE VERIFICATION SHIELD
+              </Typography>
             </Box>
           </CardContent>
         </Card>

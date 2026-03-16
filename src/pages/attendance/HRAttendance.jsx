@@ -60,6 +60,11 @@ const HRAttendance = () => {
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [detailsDialog, setDetailsDialog] = useState(false)
+  const [markDialogOpen, setMarkDialogOpen] = useState(false)
+  const [markingEmployee, setMarkingEmployee] = useState('')
+  const [markingStatus, setMarkingStatus] = useState('present')
+  const [markingDate, setMarkingDate] = useState(new Date().toISOString().split('T')[0])
+
 
   const [employees, setEmployees] = useState([])
 
@@ -143,7 +148,7 @@ const HRAttendance = () => {
       case 'present': return '#4caf50'
       case 'absent': return '#f44336'
       case 'late': return '#ff9800'
-      case 'halfday': return '#2196f3'
+      case 'half-day': return '#2196f3'
       default: return '#757575'
     }
   }
@@ -153,7 +158,7 @@ const HRAttendance = () => {
       case 'present': return <CheckCircle />
       case 'absent': return <Cancel />
       case 'late': return <Schedule />
-      case 'halfday': return <Schedule />
+      case 'half-day': return <Schedule />
       default: return null
     }
   }
@@ -178,7 +183,7 @@ const HRAttendance = () => {
     const present = employeeRecords.filter(record => record.status === 'present').length
     const absent = employeeRecords.filter(record => record.status === 'absent').length
     const late = employeeRecords.filter(record => record.status === 'late').length
-    const halfday = employeeRecords.filter(record => record.status === 'halfday').length
+    const halfday = employeeRecords.filter(record => record.status === 'half-day').length
     return { present, absent, late, halfday, total: employeeRecords.length }
   }
 
@@ -195,7 +200,32 @@ const HRAttendance = () => {
     }, 1000)
   }
 
+  const handleManualMarkSubmit = async () => {
+    try {
+      if (!markingEmployee) {
+        toast.error('Please select an employee')
+        return
+      }
+
+      const emp = employees.find(e => e._id === markingEmployee || e.id === markingEmployee)
+      
+      await attendanceAPI.mark({
+        employeeId: markingEmployee,
+        status: markingStatus,
+        date: markingDate
+      })
+
+      toast.success(`Attendance marked for ${emp?.name || 'employee'}`)
+      setMarkDialogOpen(false)
+      fetchData() // Refresh table
+    } catch (error) {
+      console.error('Error marking attendance:', error)
+      toast.error(error.response?.data?.message || 'Failed to mark attendance')
+    }
+  }
+
   const handleViewDetails = (record) => {
+
     setSelectedEmployee(record)
     setDetailsDialog(true)
   }
@@ -249,6 +279,27 @@ const HRAttendance = () => {
               <Download />
             </IconButton>
           </Tooltip>
+          <Button 
+            variant="contained" 
+            onClick={() => setMarkDialogOpen(true)}
+            sx={{ 
+              fontWeight: 'bold',
+              bgcolor: '#000000',
+              color: '#ffffff',
+              border: '2px solid #000000',
+              px: 3,
+              '&:hover': {
+                bgcolor: 'rgba(0,0,0,0.8)',
+                border: '2px solid #000000',
+              },
+              textTransform: 'none',
+              borderRadius: '8px'
+            }}
+            startIcon={<Edit />}
+          >
+            Manual Mark
+          </Button>
+
         </Box>
       </Box>
 
@@ -263,7 +314,7 @@ const HRAttendance = () => {
             <CardContent sx={{ textAlign: 'center' }}>
               <Group sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
               <Typography variant="h4" color="#2196f3" gutterBottom>
-                {getUniqueEmployees().length}
+                {employees.length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Total Employees
@@ -281,7 +332,7 @@ const HRAttendance = () => {
             <CardContent sx={{ textAlign: 'center' }}>
               <CheckCircle sx={{ fontSize: 40, color: '#4caf50', mb: 1 }} />
               <Typography variant="h4" color="#4caf50" gutterBottom>
-                {attendanceData.filter(r => r.status === 'present').length}
+                {attendanceData.filter(r => r.status === 'present' && r.date === new Date().toISOString().split('T')[0]).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Present Today
@@ -299,7 +350,7 @@ const HRAttendance = () => {
             <CardContent sx={{ textAlign: 'center' }}>
               <Cancel sx={{ fontSize: 40, color: '#f44336', mb: 1 }} />
               <Typography variant="h4" color="#f44336" gutterBottom>
-                {attendanceData.filter(r => r.status === 'absent').length}
+                {employees.length - attendanceData.filter(r => (r.status === 'present' || r.status === 'late') && r.date === new Date().toISOString().split('T')[0]).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Absent Today
@@ -317,7 +368,7 @@ const HRAttendance = () => {
             <CardContent sx={{ textAlign: 'center' }}>
               <Schedule sx={{ fontSize: 40, color: '#ff9800', mb: 1 }} />
               <Typography variant="h4" color="#ff9800" gutterBottom>
-                {attendanceData.filter(r => r.status === 'late').length}
+                {attendanceData.filter(r => r.status === 'late' && r.date === new Date().toISOString().split('T')[0]).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Late Today
@@ -386,7 +437,8 @@ const HRAttendance = () => {
                       <MenuItem value="present">Present</MenuItem>
                       <MenuItem value="absent">Absent</MenuItem>
                       <MenuItem value="late">Late</MenuItem>
-                      <MenuItem value="halfday">Half Day</MenuItem>
+                      <MenuItem value="half-day">Half Day</MenuItem>
+
                     </Select>
                   </FormControl>
                 </Grid>
@@ -498,6 +550,12 @@ const HRAttendance = () => {
                   <Typography variant="body2"><strong>Name:</strong> {selectedEmployee.employeeName}</Typography>
                   <Typography variant="body2"><strong>ID:</strong> {selectedEmployee.employeeId}</Typography>
                   <Typography variant="body2"><strong>Department:</strong> {selectedEmployee.department}</Typography>
+                  {selectedEmployee.markedByName && (
+                    <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                      <strong>Marked By:</strong> {selectedEmployee.markedByName}
+                    </Typography>
+                  )}
+
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
@@ -529,7 +587,60 @@ const HRAttendance = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Manual Mark Attendance Dialog */}
+      <Dialog open={markDialogOpen} onClose={() => setMarkDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Manual Attendance Entry</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel>Select Employee</InputLabel>
+              <Select
+                value={markingEmployee}
+                onChange={(e) => setMarkingEmployee(e.target.value)}
+                label="Select Employee"
+              >
+                {employees.map((emp) => (
+                  <MenuItem key={emp.id || emp._id} value={emp.id || emp._id}>
+                    {emp.name} ({emp.employeeId})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={markingStatus}
+                onChange={(e) => setMarkingStatus(e.target.value)}
+                label="Status"
+              >
+                <MenuItem value="present">Present</MenuItem>
+                <MenuItem value="late">Late</MenuItem>
+                <MenuItem value="absent">Absent</MenuItem>
+                <MenuItem value="half-day">Half Day</MenuItem>
+
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Date"
+              type="date"
+              fullWidth
+              value={markingDate}
+              onChange={(e) => setMarkingDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMarkDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="secondary" onClick={handleManualMarkSubmit}>
+            Save Record
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashboardLayout>
+
   )
 }
 

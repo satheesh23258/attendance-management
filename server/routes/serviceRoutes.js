@@ -1,5 +1,6 @@
 import express from 'express';
 import Service from '../models/Service.js';
+import Employee from '../models/Employee.js';
 import { auth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -8,8 +9,8 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const services = await Service.find()
-      .populate('assignedTo', 'name email')
-      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email avatar department')
+      .populate('createdBy', 'name email avatar department')
       .sort({ createdAt: -1 });
     res.json(services);
   } catch (error) {
@@ -20,11 +21,17 @@ router.get('/', auth, async (req, res) => {
 // GET my services (assigned to current user)
 router.get('/my', auth, async (req, res) => {
   try {
-    const { assignedTo } = req.query;
-    const filter = assignedTo ? { assignedTo } : {};
+    // Find the employee profile associated with the authenticated user
+    const employee = await Employee.findOne({ email: req.user.email });
+    
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee profile not found' });
+    }
+
+    const filter = { assignedTo: employee._id };
     const services = await Service.find(filter)
-      .populate('assignedTo', 'name email')
-      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email avatar department')
+      .populate('createdBy', 'name email avatar department')
       .sort({ createdAt: -1 });
     res.json(services);
   } catch (error) {
@@ -36,8 +43,8 @@ router.get('/my', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const service = await Service.findById(req.params.id)
-      .populate('assignedTo', 'name email')
-      .populate('createdBy', 'name email');
+      .populate('assignedTo', 'name email avatar department')
+      .populate('createdBy', 'name email avatar department');
     if (!service) return res.status(404).json({ message: 'Service not found' });
     res.json(service);
   } catch (error) {
@@ -48,7 +55,15 @@ router.get('/:id', auth, async (req, res) => {
 // POST create service
 router.post('/', auth, requireRole('admin', 'hr'), async (req, res) => {
   try {
-    const service = await Service.create(req.body);
+    const serviceData = {
+      ...req.body,
+      createdBy: req.user._id,
+      createdByName: req.user.name
+    };
+    let service = await Service.create(serviceData);
+    service = await Service.findById(service._id)
+      .populate('assignedTo', 'name email avatar department')
+      .populate('createdBy', 'name email avatar department');
     res.status(201).json(service);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -58,11 +73,35 @@ router.post('/', auth, requireRole('admin', 'hr'), async (req, res) => {
 // PUT update service
 router.put('/:id', auth, requireRole('admin', 'hr'), async (req, res) => {
   try {
+    const { assignedTo, createdBy } = req.body;
+    const updateData = { ...req.body };
+
+    // Sync assignedToName if assignedTo is being updated
+    if (assignedTo !== undefined) {
+      if (assignedTo) {
+        const emp = await Employee.findById(assignedTo);
+        if (emp) updateData.assignedToName = emp.name;
+      } else {
+        updateData.assignedToName = '';
+      }
+    }
+
+    // Sync createdByName if createdBy is being updated (rare but possible)
+    if (createdBy !== undefined) {
+      if (createdBy) {
+        const emp = await Employee.findById(createdBy);
+        if (emp) updateData.createdByName = emp.name;
+      } else {
+        updateData.createdByName = '';
+      }
+    }
+
     const service = await Service.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
-    );
+    ).populate('assignedTo', 'name email avatar department');
+
     if (!service) return res.status(404).json({ message: 'Service not found' });
     res.json(service);
   } catch (error) {
@@ -80,7 +119,39 @@ router.patch('/:id/status', auth, async (req, res) => {
       req.params.id,
       update,
       { new: true }
-    );
+    ).populate('assignedTo', 'name email avatar department')
+     .populate('createdBy', 'name email avatar department');
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+    res.json(service);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// POST assign service
+router.post('/:id/assign', auth, requireRole('admin', 'hr'), async (req, res) => {
+  try {
+    const { employeeId } = req.body;
+    
+    // Find employee to get their name
+    let assignedToName = '';
+    if (employeeId) {
+      const employee = await Employee.findById(employeeId);
+      if (employee) {
+        assignedToName = employee.name;
+      }
+    }
+
+    const service = await Service.findByIdAndUpdate(
+      req.params.id,
+      { 
+        assignedTo: employeeId || null,
+        assignedToName: assignedToName
+      },
+      { new: true }
+    ).populate('assignedTo', 'name email avatar department')
+     .populate('createdBy', 'name email avatar department');
+
     if (!service) return res.status(404).json({ message: 'Service not found' });
     res.json(service);
   } catch (error) {

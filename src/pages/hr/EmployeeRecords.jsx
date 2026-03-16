@@ -30,7 +30,8 @@ import {
   Email,
   Phone,
   Business,
-  Visibility
+  Visibility,
+  Refresh
 } from '@mui/icons-material'
 import { useTheme } from '../../contexts/ThemeContext'
 import { employeeAPI } from '../../services/api'
@@ -89,15 +90,7 @@ const EmployeeRecords = () => {
     }
   }
 
-  const getPerformanceColor = (performance) => {
-    switch (performance) {
-      case 'Excellent': return 'success'
-      case 'Good': return 'primary'
-      case 'Average': return 'warning'
-      case 'Poor': return 'error'
-      default: return 'default'
-    }
-  }
+
 
   const getInitials = (name) => {
     return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '?'
@@ -113,26 +106,41 @@ const EmployeeRecords = () => {
 
   return (
     <DashboardLayout title="Employee Management Records">
-      {/* Header */}
+      {/* Header Banner */}
       <Box sx={{
-        backgroundColor: '#000000', // Enforced Yellow Theme
-        color: 'black',
+        background: '#00c853',
+        color: 'white',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            Employee Records
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Employee Management Records
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Comprehensive database of employee information
+            </Typography>
+          </Box>
         </Box>
-        <Typography variant="h6">
-          HR Dashboard
-        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchEmployees} title="Refresh">
+            <Refresh />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Main Content */}
@@ -179,10 +187,10 @@ const EmployeeRecords = () => {
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="info.main">
-                  {employees.filter(emp => emp.performance === 'Excellent').length}
+                  {employees.filter(emp => emp.status === 'Inactive').length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Excellent Performance
+                  Inactive
                 </Typography>
               </CardContent>
             </Card>
@@ -216,8 +224,6 @@ const EmployeeRecords = () => {
                   <TableRow>
                     <TableCell>Employee</TableCell>
                     <TableCell>Department</TableCell>
-                    <TableCell>Position</TableCell>
-                    <TableCell>Performance</TableCell>
                     <TableCell>Attendance</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Actions</TableCell>
@@ -242,14 +248,8 @@ const EmployeeRecords = () => {
                         </Box>
                       </TableCell>
                       <TableCell>{employee.department}</TableCell>
-                      <TableCell>{employee.position}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={employee.performance || 'Average'}
-                          color={getPerformanceColor(employee.performance || 'Average')}
-                          size="small"
-                        />
-                      </TableCell>
+
+
                       <TableCell>{employee.attendance || '0%'}</TableCell>
                       <TableCell>
                         <Chip
@@ -271,7 +271,7 @@ const EmployeeRecords = () => {
                   ))}
                   {filteredEmployees.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={5} align="center">
                         No employees found
                       </TableCell>
                     </TableRow>
@@ -343,15 +343,7 @@ const EmployeeRecords = () => {
                   margin="normal"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Position"
-                  value={selectedEmployee.position || ''}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -370,15 +362,7 @@ const EmployeeRecords = () => {
                   margin="normal"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Performance"
-                  value={selectedEmployee.performance || 'N/A'}
-                  disabled
-                  margin="normal"
-                />
-              </Grid>
+
             </Grid>
           )}
         </DialogContent>

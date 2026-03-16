@@ -55,7 +55,7 @@ const AdminLogin = () => {
     setError('')
     setSuccess('')
 
-    const result = await login({ email: formData.email, password: formData.password })
+    const result = await login({ email: formData.email, password: formData.password }, 'admin')
     setLoading(false)
 
     if (!result.success) {
@@ -76,15 +76,15 @@ const AdminLogin = () => {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       background: '#1B5E20',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
     }}>
       <Container maxWidth="sm">
-        <Card sx={{ 
+        <Card sx={{
           boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
           borderRadius: 3,
           overflow: 'hidden'
@@ -92,12 +92,12 @@ const AdminLogin = () => {
           <CardContent sx={{ p: 4 }}>
             {/* Header */}
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar sx={{ 
-                bgcolor: '#000000', color: '#FFFFFF', 
-                width: 80, 
-                height: 80, 
-                mx: 'auto', 
-                mb: 2 
+              <Avatar sx={{
+                bgcolor: '#000000', color: '#FFFFFF',
+                width: 80,
+                height: 80,
+                mx: 'auto',
+                mb: 2
               }}>
                 <AdminPanelSettings sx={{ fontSize: 40 }} />
               </Avatar>
@@ -135,7 +135,7 @@ const AdminLogin = () => {
                 required
                 sx={{ mb: 3 }}
                 placeholder="admin@company.com"
-              
+
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -144,7 +144,7 @@ const AdminLogin = () => {
                   )
                 }}
               />
-              
+
               <TextField
                 fullWidth
                 label="Password"
@@ -155,7 +155,7 @@ const AdminLogin = () => {
                 required
                 sx={{ mb: 1 }}
                 placeholder="Enter your password"
-              
+
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -171,21 +171,21 @@ const AdminLogin = () => {
                   )
                 }}
               />
-              
+
               {/* Forgot Password Link */}
               <Box sx={{ textAlign: 'right', mb: 3 }}>
                 <Button
                   href="/forgot-password"
                   variant="outlined"
                   size="small"
-                  sx={{ 
-                    textTransform: 'none', 
-                    fontSize: '14px', 
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '14px',
                     color: '#000000',
                     borderColor: '#1B5E20',
                     '&:hover': {
-                       bgcolor: '#f5f5f5',
-                       borderColor: '#1B5E20'
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#1B5E20'
                     }
                   }}
                 >
@@ -199,9 +199,8 @@ const AdminLogin = () => {
                 variant="contained"
                 size="large"
                 disabled={loading}
-                sx={{ 
+                sx={{
                   bgcolor: '#000000', color: '#FFFFFF',
-                  color: '#ffffff',
                   '&:hover': { bgcolor: '#111111' },
                   py: 1.5,
                   fontSize: '16px',
@@ -229,11 +228,11 @@ const AdminLogin = () => {
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
                 Not an admin?{' '}
-                <Button 
-                  href="/login/hr" 
+                <Button
+                  href="/login/hr"
                   variant="outlined"
-                  sx={{ 
-                    textTransform: 'none', 
+                  sx={{
+                    textTransform: 'none',
                     color: '#000000',
                     borderColor: '#1B5E20',
                     mx: 1,
@@ -243,10 +242,10 @@ const AdminLogin = () => {
                   HR Login
                 </Button>
                 {'|'}
-                <Button 
-                  href="/login/employee" 
+                <Button
+                  href="/login/employee"
                   variant="outlined"
-                  sx={{ 
+                  sx={{
                     textTransform: 'none',
                     color: '#000000',
                     borderColor: '#1B5E20',

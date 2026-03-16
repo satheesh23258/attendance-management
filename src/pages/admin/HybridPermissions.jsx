@@ -52,69 +52,19 @@ const HybridPermissions = () => {
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [permissionForm, setPermissionForm] = useState({
-    canAccessHR: true,
-    canAccessEmployee: true,
-    canViewReports: true,
-    canManageAttendance: false,
+    canAccessHR: false,
+    canAccessEmployee: false,
+    canManageAttendance: true,
     canMarkAttendanceForOthers: false,
-    canManageLeaves: true,
+    canManageLeaves: false,
     notes: ''
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    // Use mock data for demo
-    setPermissions([
-      {
-        _id: '1',
-        employee: {
-          _id: '3',
-          name: 'John Smith',
-          email: 'john@company.com',
-          employeeId: 'EMP003'
-        },
-        permissions: {
-          canAccessHR: true,
-          canAccessEmployee: true,
-          canViewReports: true,
-          canManageAttendance: true,
-          canMarkAttendanceForOthers: true,
-          canManageLeaves: false
-        },
-        grantedBy: 'Admin',
-        grantedAt: new Date('2024-01-15'),
-        expiresAt: new Date('2024-12-31'),
-        accessCount: 25,
-        lastAccessed: new Date(),
-        status: 'active'
-      }
-    ])
-
-    setEligibleEmployees([
-      {
-        _id: '3',
-        name: 'John Smith',
-        email: 'john@company.com',
-        employeeId: 'EMP003',
-        department: 'IT'
-      },
-      {
-        _id: '4',
-        name: 'Sarah Johnson',
-        email: 'sarah@company.com',
-        employeeId: 'EMP004',
-        department: 'HR'
-      },
-      {
-        _id: '5',
-        name: 'Mike Wilson',
-        email: 'mike@company.com',
-        employeeId: 'EMP005',
-        department: 'Sales'
-      }
-    ])
-    setLoading(false)
+    fetchPermissions()
+    fetchEligibleEmployees()
   }, [])
 
   const fetchPermissions = async () => {
@@ -151,51 +101,48 @@ const HybridPermissions = () => {
     }
 
     try {
-      // For demo, create mock permission
-      const newPermission = {
-        _id: Date.now().toString(),
-        employee: eligibleEmployees.find(emp => emp._id === selectedEmployee),
+      const token = localStorage.getItem('token')
+      await axios.post('/api/hybrid-permissions/grant', {
+        employeeId: selectedEmployee,
         permissions: permissionForm,
-        grantedBy: 'Admin',
-        grantedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        accessCount: 0,
-        lastAccessed: null,
-        status: 'active'
-      }
+        notes: permissionForm.notes
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
-      setPermissions(prev => [...prev, newPermission])
       setSuccess('Hybrid permission granted successfully!')
       setOpenDialog(false)
       setSelectedEmployee('')
       setPermissionForm({
-        canAccessHR: true,
-        canAccessEmployee: true,
-        canViewReports: true,
-        canManageAttendance: false,
+        canAccessHR: false,
+        canAccessEmployee: false,
+        canManageAttendance: true,
         canMarkAttendanceForOthers: false,
-        canManageLeaves: true,
+        canManageLeaves: false,
         notes: ''
       })
+      fetchPermissions()
+      fetchEligibleEmployees()
       setError('')
     } catch (error) {
-      setError('Failed to grant permission')
+      console.error('Error granting permission:', error)
+      setError(error.response?.data?.message || 'Failed to grant permission')
     }
   }
 
   const handleRevokePermission = async (permissionId) => {
     try {
-      // For demo, update mock data
-      setPermissions(prev =>
-        prev.map(p =>
-          p._id === permissionId
-            ? { ...p, status: 'revoked' }
-            : p
-        )
-      )
+      const token = localStorage.getItem('token')
+      await axios.patch(`/api/hybrid-permissions/revoke/${permissionId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      
       setSuccess('Permission revoked successfully')
+      fetchPermissions()
+      fetchEligibleEmployees()
     } catch (error) {
-      setError('Failed to revoke permission')
+      console.error('Error revoking permission:', error)
+      setError(error.response?.data?.message || 'Failed to revoke permission')
     }
   }
 
@@ -326,9 +273,6 @@ const HybridPermissions = () => {
                           {permission.permissions.canAccessEmployee && (
                             <Chip label="Employee" size="small" color="secondary" />
                           )}
-                          {permission.permissions.canViewReports && (
-                            <Chip label="Reports" size="small" color="info" />
-                          )}
                           {permission.permissions.canManageLeaves && (
                             <Chip label="Leave Mgmt" size="small" color="warning" />
                           )}
@@ -437,18 +381,6 @@ const HybridPermissions = () => {
                       />
                     }
                     label="Access Employee Dashboard"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={permissionForm.canViewReports}
-                        onChange={(e) => setPermissionForm(prev => ({
-                          ...prev,
-                          canViewReports: e.target.checked
-                        }))}
-                      />
-                    }
-                    label="View Reports"
                   />
                   <FormControlLabel
                     control={

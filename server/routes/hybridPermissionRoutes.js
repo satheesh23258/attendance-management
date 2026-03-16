@@ -8,24 +8,16 @@ import { auth } from '../middleware/auth.js';
 const router = express.Router();
 
 // Middleware to check if user is admin
-const adminOnly = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ message: 'Admin access required' });
-    }
-    
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Token is not valid' });
+const adminOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: Admin access required' });
   }
+  next();
 };
+
+// Apply auth middleware to all routes below
+router.use(auth);
+
 
 // Grant hybrid permission to employee (Admin only)
 router.post('/grant', adminOnly, async (req, res) => {
@@ -38,35 +30,76 @@ router.post('/grant', adminOnly, async (req, res) => {
       return res.status(404).json({ message: 'Employee not found' });
     }
 
-    // Check if employee already has active hybrid permission
-    const existingPermission = await HybridPermission.findActiveByEmployee(employeeId);
-    if (existingPermission) {
-      return res.status(400).json({ message: 'Employee already has active hybrid permission' });
-    }
-
-    // Get admin info
+    // Get admin info - handle case where admin might not be in Employee table
     const adminUser = await User.findById(req.user.id);
     const adminEmployee = await Employee.findOne({ email: adminUser.email });
 
-    // Create hybrid permission
-    const hybridPermission = new HybridPermission({
-      employeeId,
-      employeeName: employee.name,
-      employeeEmail: employee.email,
-      grantedBy: adminEmployee._id,
-      grantedByName: adminEmployee.name,
-      permissions: {
-        canAccessHR: permissions.canAccessHR ?? true,
-        canAccessEmployee: permissions.canAccessEmployee ?? true,
-        canViewReports: permissions.canViewReports ?? true,
-        canManageAttendance: permissions.canManageAttendance ?? false,
-        canManageLeaves: permissions.canManageLeaves ?? true,
-        ...permissions
-      },
-      notes
-    });
+    const granterId = adminEmployee ? adminEmployee._id : adminUser._id;
+    const granterName = adminEmployee ? adminEmployee.name : adminUser.name;
 
-    await hybridPermission.save();
+    // Check if employee already has active hybrid permission
+    let hybridPermission = await HybridPermission.findOne({ employeeId, status: 'active' });
+    
+    if (hybridPermission) {
+      // Update existing
+      hybridPermission.permissions = {
+        canAccessHR: permissions?.canAccessHR ?? false,
+        canAccessEmployee: permissions?.canAccessEmployee ?? true,
+        canViewReports: permissions?.canViewReports ?? false,
+        canManageAttendance: permissions?.canManageAttendance ?? true,
+        canManageLeaves: permissions?.canManageLeaves ?? false,
+        ...permissions
+      };
+      hybridPermission.notes = notes || hybridPermission.notes;
+      hybridPermission.grantedBy = granterId;
+      hybridPermission.grantedByName = granterName;
+      await hybridPermission.save();
+    } else {
+      // Create new hybrid permission
+      hybridPermission = new HybridPermission({
+        employeeId,
+        employeeName: employee.name,
+        employeeEmail: employee.email,
+        grantedBy: granterId,
+        grantedByName: granterName,
+        permissions: {
+          canAccessHR: permissions?.canAccessHR ?? false,
+          canAccessEmployee: permissions?.canAccessEmployee ?? true,
+          canViewReports: permissions?.canViewReports ?? false,
+          canManageAttendance: permissions?.canManageAttendance ?? true,
+          canManageLeaves: permissions?.canManageLeaves ?? false,
+          ...permissions
+        },
+        notes
+      });
+      await hybridPermission.save();
+    }
+
+    // Sync with User model for session management
+    await User.findOneAndUpdate(
+      { email: employee.email },
+      { 
+        $set: { 
+          'hybridPermissions.hasAccess': true,
+          'hybridPermissions.roles': ['employee', 'hr'],
+          'hybridPermissions.permissions': hybridPermission.permissions,
+          'hybridPermissions.granterId': granterId
+        } 
+      }
+    );
+
+    // Sync with Employee model for UI display in lists
+    await Employee.findByIdAndUpdate(
+      employeeId,
+      {
+        $set: {
+          hybridPermissions: {
+            hasAccess: true,
+            permissions: hybridPermission.permissions
+          }
+        }
+      }
+    );
 
     res.status(201).json({
       message: 'Hybrid permission granted successfully',
@@ -90,6 +123,29 @@ router.patch('/revoke/:permissionId', adminOnly, async (req, res) => {
 
     permission.status = 'revoked';
     await permission.save();
+
+    // Sync with User model
+    await User.findOneAndUpdate(
+      { email: permission.employeeEmail },
+      { 
+        $set: { 
+          'hybridPermissions.hasAccess': false,
+          'hybridPermissions.roles': [],
+          'hybridPermissions.permissions': {}
+        } 
+      }
+    );
+
+    // Sync with Employee model
+    await Employee.findOneAndUpdate(
+      { email: permission.employeeEmail },
+      {
+        $set: {
+          'hybridPermissions.hasAccess': false,
+          'hybridPermissions.permissions': {}
+        }
+      }
+    );
 
     res.json({ message: 'Hybrid permission revoked successfully' });
   } catch (error) {

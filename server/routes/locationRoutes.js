@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/live', auth, requireRole('admin', 'hr'), async (req, res) => {
   try {
     const locations = await Location.find({ isActive: true })
-      .populate('employeeId', 'name email')
+      .populate('employeeId', 'name email avatar')
       .sort({ createdAt: -1 });
     res.json(locations);
   } catch (error) {

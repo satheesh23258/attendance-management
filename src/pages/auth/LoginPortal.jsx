@@ -14,7 +14,8 @@ import {
   AdminPanelSettings,
   People,
   Person,
-  Login as LoginIcon
+  Login as LoginIcon,
+  AccessTime
 } from '@mui/icons-material'
 
 const LoginPortal = () => {
@@ -181,6 +182,38 @@ const LoginPortal = () => {
               </Grid>
             </Grid>
           </Paper>
+        </Box>
+
+        {/* Quick Attendance Option */}
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Button
+            variant="outlined"
+            size="large"
+            href="/login/employee"
+            startIcon={<AccessTime />}
+            sx={{
+              color: 'white',
+              borderColor: 'rgba(255,255,255,0.5)',
+              px: 4,
+              py: 1.5,
+              borderRadius: 3,
+              textTransform: 'none',
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              bgcolor: 'rgba(255,255,255,0.05)',
+              '&:hover': {
+                borderColor: 'white',
+                bgcolor: 'rgba(255,255,255,0.15)',
+                transform: 'translateY(-2px)'
+              },
+              transition: 'all 0.2s'
+            }}
+          >
+            Employee Quick Attendance
+          </Button>
+          <Typography variant="body2" color="white" sx={{ opacity: 0.7, mt: 1 }}>
+            Sign in directly to mark your attendance
+          </Typography>
         </Box>
 
         {/* Signup Links */}

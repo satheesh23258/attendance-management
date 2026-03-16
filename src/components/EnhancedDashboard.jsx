@@ -428,11 +428,6 @@ const EnhancedDashboard = ({ userRole, userName, onLogout }) => {
                   {currentRole === 'hr' && (
                     <>
                       <Grid item xs={6}>
-                        <Button variant="outlined" fullWidth startIcon={<Assignment />}>
-                          View Reports
-                        </Button>
-                      </Grid>
-                      <Grid item xs={6}>
                         <Button variant="outlined" fullWidth startIcon={<People />}>
                           Employee Records
                         </Button>

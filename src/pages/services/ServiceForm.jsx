@@ -79,12 +79,20 @@ const ServiceForm = () => {
         if (isEdit) {
           const serviceResponse = await serviceAPI.getById(id)
           const service = serviceResponse.data
+          
+          let assignedToId = '';
+          if (service.assignedTo) {
+            assignedToId = typeof service.assignedTo === 'object' 
+              ? (service.assignedTo.id || service.assignedTo._id) 
+              : service.assignedTo;
+          }
+
           setFormData({
             title: service.title,
             description: service.description,
             priority: service.priority,
             category: service.category,
-            assignedTo: service.assignedTo?._id || service.assignedTo || '',
+            assignedTo: assignedToId,
             dueDate: service.dueDate ? service.dueDate.split('T')[0] : '',
             location: service.location?.address || ''
           })
@@ -163,6 +171,9 @@ const ServiceForm = () => {
     try {
       const submissionData = {
         ...formData,
+        assignedTo: typeof formData.assignedTo === 'object' 
+          ? (formData.assignedTo.id || formData.assignedTo._id) 
+          : formData.assignedTo,
         location: formData.location ? { address: formData.location } : undefined
       }
 

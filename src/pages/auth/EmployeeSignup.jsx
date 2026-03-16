@@ -44,7 +44,6 @@ const EmployeeSignup = () => {
     password: '',
     confirmPassword: '',
     department: '',
-    position: '',
     phone: '',
     employeeId: ''
   })
@@ -404,15 +403,6 @@ const EmployeeSignup = () => {
                 </Select>
               </FormControl>
 
-              <TextField
-                fullWidth
-                label="Position"
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                sx={{ mb: 2 }}
-                placeholder="Software Engineer"
-              />
 
               <TextField
                 fullWidth

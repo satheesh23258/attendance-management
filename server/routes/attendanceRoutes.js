@@ -2,7 +2,10 @@ import express from 'express';
 import Attendance from '../models/Attendance.js';
 import Employee from '../models/Employee.js';
 import Notification from '../models/Notification.js';
+import HybridPermission from '../models/HybridPermission.js';
+import Location from '../models/Location.js';
 import { auth, requireRole } from '../middleware/auth.js';
+
 
 const router = express.Router();
 
@@ -62,6 +65,74 @@ router.post('/check-in', auth, async (req, res) => {
         status,
         location: { lat, lng, address: employee.isRemote ? 'Remote' : 'Office' },
         markedBy: req.user._id,
+        markedByName: req.user.name,
+      },
+      { upsert: true, new: true }
+    );
+
+    // Sync Live Location
+    await Location.findOneAndUpdate(
+      { employeeId: employee._id },
+      {
+        employeeId: employee._id,
+        employeeName: employee.name,
+        latitude: lat,
+        longitude: lng,
+        address: employee.isRemote ? 'Remote' : 'Office',
+        isActive: true
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json(record);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 🛂 Feature: HR/Admin/Hybrid Manual Marking
+router.post('/mark', auth, async (req, res) => {
+
+  try {
+    const { employeeId, status, date, checkIn, checkOut, location } = req.body;
+
+    // 1. Permission Check
+    let hasPermission = req.user.role === 'admin' || req.user.role === 'hr';
+    
+    if (!hasPermission) {
+        // Check for hybrid permission
+        const employeeProfile = await Employee.findOne({ email: req.user.email });
+        if (employeeProfile) {
+            const hybrid = await HybridPermission.findOne({ 
+                employeeId: employeeProfile._id, 
+                status: 'active',
+                'permissions.canManageAttendance': true 
+            });
+            if (hybrid) hasPermission = true;
+        }
+    }
+
+    if (!hasPermission) {
+        return res.status(403).json({ message: 'Permission denied: Cannot mark attendance for others' });
+    }
+
+    // 2. Find target employee
+    const targetEmployee = await Employee.findById(employeeId);
+    if (!targetEmployee) return res.status(404).json({ message: 'Target employee not found' });
+
+    // 3. Create/Update attendance
+    const record = await Attendance.findOneAndUpdate(
+      { employeeId, date },
+      {
+        employeeId,
+        employeeName: targetEmployee.name,
+        date,
+        checkIn: checkIn || '09:00:00',
+        checkOut: checkOut || '',
+        status: status || 'present',
+        location: location || { address: 'Manual Entry' },
+        markedBy: req.user._id,
+        markedByName: req.user.name,
       },
       { upsert: true, new: true }
     );
@@ -73,6 +144,7 @@ router.post('/check-in', auth, async (req, res) => {
 });
 
 // Original Routes Rest (simplified for space)
+
 router.post('/check-out', auth, async (req, res) => {
     try {
       const employee = await Employee.findOne({ email: req.user.email });
@@ -82,6 +154,13 @@ router.post('/check-out', auth, async (req, res) => {
       if (!record) return res.status(400).json({ message: 'Check-in first' });
       record.checkOut = now.toTimeString().slice(0, 8);
       await record.save();
+
+      // Sync Live Location - Mark as Inactive
+      await Location.findOneAndUpdate(
+        { employeeId: employee._id },
+        { isActive: false }
+      );
+
       res.json(record);
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
@@ -99,6 +178,29 @@ router.get('/today', auth, async (req, res) => {
       const attendance = await Attendance.find({ date: today });
       res.json(attendance);
     } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+router.get('/my-today', auth, async (req, res) => {
+  try {
+    const employee = await Employee.findOne({ email: req.user.email });
+    if (!employee) return res.status(404).json({ message: 'Employee profile not found' });
+    
+    const today = new Date().toISOString().split('T')[0];
+    const attendance = await Attendance.findOne({ employeeId: employee._id, date: today });
+    res.json(attendance);
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+router.get('/my-history', auth, async (req, res) => {
+  try {
+    const employee = await Employee.findOne({ email: req.user.email });
+    if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    const attendance = await Attendance.find({ employeeId: employee._id }).sort({ date: -1 });
+    res.json(attendance);
+  } catch (error) { 
+    res.status(500).json({ message: error.message }); 
+  }
 });
 
 export default router;

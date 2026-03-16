@@ -5,7 +5,6 @@ import Notification from '../models/Notification.js';
 import { auth, requireRole } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
-import csv from 'csv-parser';
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
 
@@ -95,86 +94,6 @@ router.post('/expenses', auth, upload.single('receipt'), async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
-});
-
-// 🛠️ Feature 4: Performance Management (Update Review)
-router.post('/:id/performance', auth, requireRole('admin', 'hr'), async (req, res) => {
-  try {
-    const employee = await Employee.findById(req.params.id);
-    employee.performance.push(req.body);
-    await employee.save();
-    res.json(employee);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// 🛠️ Feature 5: Inventory & Asset Management (Assign Asset)
-router.post('/:id/assets', auth, requireRole('admin', 'hr'), async (req, res) => {
-    try {
-      const employee = await Employee.findById(req.params.id);
-      employee.assets.push(req.body);
-      await employee.save();
-      res.json(employee);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
-});
-
-// 🛠️ Bulk Technical Improvement: CSV Import Template
-router.get('/import-template', auth, requireRole('admin', 'hr'), (req, res) => {
-  const csvTemplate = 'name,email,employeeId,department,phone,role,isRemote,officeLat,officeLng,officeRadius\nJohn Doe,john@example.com,EMP001,IT,1234567890,employee,false,40.7128,-74.006,100';
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename=employee_template.csv');
-  res.status(200).send(csvTemplate);
-});
-
-// 🛠️ Bulk Technical Improvement: CSV Import
-router.post('/bulk-import', auth, requireRole('admin', 'hr'), upload.single('csv'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  
-  const employees = [];
-  const errors = [];
-  let rowCount = 0;
-
-  fs.createReadStream(req.file.path)
-    .pipe(csv())
-    .on('data', (data) => {
-        rowCount++;
-        // Basic validation or transformation
-        if (!data.email || !data.name || !data.employeeId) {
-            errors.push(`Row ${rowCount}: Missing required fields (name, email, or employeeId)`);
-        } else {
-            employees.push({
-                ...data,
-                isRemote: data.isRemote === 'true',
-                officeLocation: {
-                    lat: parseFloat(data.officeLat) || 40.7128,
-                    lng: parseFloat(data.officeLng) || -74.006,
-                    radius: parseInt(data.officeRadius) || 100
-                }
-            });
-        }
-    })
-    .on('end', async () => {
-      try {
-        if (employees.length > 0) {
-            await Employee.insertMany(employees, { ordered: false });
-        }
-        fs.unlinkSync(req.file.path);
-        res.json({ 
-            message: `Successfully imported ${employees.length} employees`,
-            failedCount: errors.length,
-            errors: errors.slice(0, 10) // Return first 10 errors
-        });
-      } catch (error) {
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        res.status(500).json({ 
-            message: 'Bulk import partially failed. Some records might have duplicate emails or IDs.',
-            error: error.message 
-        });
-      }
-    });
 });
 
 // Get current logged in employee details

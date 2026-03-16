@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material'
 import { attendanceAPI } from '../../services/api'
 import toast from 'react-hot-toast'
+import DashboardLayout from '../../components/DashboardLayout'
 
 const CheckInOut = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -128,27 +129,46 @@ const CheckInOut = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#00c853', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+    <DashboardLayout title="My Attendance">
+      <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+      {/* Header Banner matching Dashboard style */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={handleBack}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            Check In/Out
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              My Attendance
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Mark your daily entry and exit times for performance tracking
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
+          <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 600 }}>
+            System Role: EMPLOYEE PORTAL
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            Status: Active Session
           </Typography>
         </Box>
-        <Typography variant="h6">
-          Employee Dashboard
-        </Typography>
       </Box>
 
       {/* Main Content */}
@@ -363,6 +383,7 @@ const CheckInOut = () => {
         </DialogActions>
       </Dialog>
     </Box>
+    </DashboardLayout>
   )
 }
 

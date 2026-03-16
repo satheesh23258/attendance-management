@@ -53,8 +53,8 @@ const SignupPortal = () => {
   ]
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       background: '#1B5E20',
       display: 'flex',
       alignItems: 'center',
@@ -64,12 +64,12 @@ const SignupPortal = () => {
       <Container maxWidth="lg">
         {/* Header */}
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Avatar sx={{ 
-            bgcolor: 'white', 
-            width: 80, 
-            height: 80, 
-            mx: 'auto', 
-            mb: 3 
+          <Avatar sx={{
+            bgcolor: 'white',
+            width: 80,
+            height: 80,
+            mx: 'auto',
+            mb: 3
           }}>
             <PersonAdd sx={{ fontSize: 40, color: '#000000' }} />
           </Avatar>
@@ -85,7 +85,7 @@ const SignupPortal = () => {
         <Grid container spacing={4}>
           {signupOptions.map((option, index) => (
             <Grid item xs={12} md={4} key={index}>
-              <Card sx={{ 
+              <Card sx={{
                 height: '100%',
                 transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                 '&:hover': {
@@ -98,12 +98,12 @@ const SignupPortal = () => {
                 <CardContent sx={{ p: 3 }}>
                   {/* Icon and Title */}
                   <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <Avatar sx={{ 
-                      bgcolor: option.color, 
-                      width: 70, 
-                      height: 70, 
-                      mx: 'auto', 
-                      mb: 2 
+                    <Avatar sx={{
+                      bgcolor: option.color,
+                      width: 70,
+                      height: 70,
+                      mx: 'auto',
+                      mb: 2
                     }}>
                       {option.icon}
                     </Avatar>
@@ -145,7 +145,7 @@ const SignupPortal = () => {
                     variant="contained"
                     size="large"
                     href={option.route}
-                    sx={{ 
+                    sx={{
                       bgcolor: option.color,
                       color: '#FFFFFF',
                       '&:hover': { bgcolor: option.color, opacity: 0.9 },
@@ -164,9 +164,9 @@ const SignupPortal = () => {
 
         {/* Important Notice */}
         <Box sx={{ mt: 6, textAlign: 'center' }}>
-          <Paper sx={{ 
-            p: 3, 
-            bgcolor: 'rgba(255,255,255,0.1)', 
+          <Paper sx={{
+            p: 3,
+            bgcolor: 'rgba(255,255,255,0.1)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)'
           }}>
@@ -174,7 +174,7 @@ const SignupPortal = () => {
               Important Notice
             </Typography>
             <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-              Account registration requires approval from your department administrator. 
+              Account registration requires approval from your department administrator.
               Please ensure you have the necessary permissions before proceeding with registration.
             </Typography>
           </Paper>
@@ -184,10 +184,10 @@ const SignupPortal = () => {
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
             Already have an account?{' '}
-            <Button 
-              href="/login" 
-              sx={{ 
-                color: 'white', 
+            <Button
+              href="/login"
+              sx={{
+                color: 'white',
                 textTransform: 'none',
                 textDecoration: 'underline',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }

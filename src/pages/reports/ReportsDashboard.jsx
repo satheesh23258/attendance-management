@@ -48,8 +48,7 @@ const ReportsDashboard = () => {
   const [selectedReport, setSelectedReport] = useState(0)
   const [reportData, setReportData] = useState({
     attendance: { monthlyData: [] },
-    services: { totalServices: 0, monthlyData: [] },
-    performance: { topPerformers: [], departmentPerformance: [] }
+    services: { totalServices: 0, monthlyData: [] }
   })
   const [employees, setEmployees] = useState([])
 
@@ -189,28 +188,6 @@ const ReportsDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="textSecondary" gutterBottom variant="overline">
-                    Avg Performance
-                  </Typography>
-                  <Typography variant="h4">
-                    87%
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Company average
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: '#000000', width: 56, height: 56 }}>
-                  <TrendingUp />
-                </Avatar>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
 
       {/* Report Tabs */}
@@ -223,7 +200,6 @@ const ReportsDashboard = () => {
         >
           <Tab label="Attendance Analytics" icon={<AccessTime />} />
           <Tab label="Service Analytics" icon={<Assignment />} />
-          <Tab label="Performance Analytics" icon={<TrendingUp />} />
           <Tab label="Department Analytics" icon={<People />} />
         </Tabs>
       </Paper>
@@ -374,66 +350,10 @@ const ReportsDashboard = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Top Performers
-                </Typography>
-                {reportData.performance.topPerformers.map((performer, index) => (
-                  <Box key={performer.name} mb={2}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="body2">
-                        {index + 1}. {performer.name}
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold">
-                        {performer.score}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={performer.score}
-                      sx={{ height: 8, borderRadius: 4 }}
-                    />
-                  </Box>
-                ))}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Performance Trends
-                </Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={reportData.attendance.monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="present"
-                      stroke="#00c853"
-                      strokeWidth={2}
-                      name="Performance Score"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </TabPanel>
-
-      <TabPanel value={selectedReport} index={3}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
                   Department Performance
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={reportData.performance.departmentPerformance} layout="horizontal">
+                  <BarChart data={reportData.attendance.monthlyData} layout="horizontal">
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" domain={[0, 100]} />
                     <YAxis dataKey="department" type="category" width={80} />
@@ -444,7 +364,6 @@ const ReportsDashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>

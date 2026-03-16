@@ -23,6 +23,12 @@ const QuickActions = ({ role }) => {
 
   const getEmployeeActions = () => [
     {
+      label: 'Mark Attendance',
+      icon: <CheckCircle />,
+      path: '/employee/checkinout',
+      color: 'primary'
+    },
+    {
       label: 'Attendance History',
       icon: <AccessTime />,
       path: '/employee/attendance',
@@ -74,12 +80,6 @@ const QuickActions = ({ role }) => {
       color: 'primary'
     },
     {
-      label: 'Performance Reviews',
-      icon: <TrendingUp />,
-      path: '/hr/performance',
-      color: 'primary'
-    },
-    {
       label: 'Live Tracking',
       icon: <LocationOn />,
       path: '/location/tracking',
@@ -101,6 +101,12 @@ const QuickActions = ({ role }) => {
       color: 'error'
     },
     {
+      label: 'Attendance Management',
+      icon: <AccessTime />,
+      path: '/hr/attendance-management',
+      color: 'error'
+    },
+    {
       label: 'Manage Hybrid Permissions',
       icon: <Security />,
       path: '/admin/manage-permissions',
@@ -113,12 +119,6 @@ const QuickActions = ({ role }) => {
       color: 'error'
     },
     {
-      label: 'View Reports',
-      icon: <TrendingUp />,
-      path: '/admin/system-reports',
-      color: 'error'
-    },
-    {
       label: 'Live Tracking',
       icon: <LocationOn />,
       path: '/location/tracking',
@@ -127,9 +127,26 @@ const QuickActions = ({ role }) => {
   ]
 
   const getActions = () => {
+    // For Hybrid users who are employees but might have special access
+    const { user } = useAuth();
+    const canManageAttendance = user?.hybridPermissions?.permissions?.canManageAttendance;
+    const canViewReports = user?.hybridPermissions?.permissions?.canViewReports;
+
     switch (role?.toLowerCase()) {
       case 'employee':
-        return getEmployeeActions()
+        const actions = getEmployeeActions();
+        if (canManageAttendance || canViewReports) {
+            // Add HR actions for hybrid users if they have permission
+            if (canManageAttendance) {
+                actions.push({
+                    label: 'Attendance Management',
+                    icon: <AccessTime />,
+                    path: '/hr/attendance-management',
+                    color: 'primary'
+                });
+            }
+        }
+        return actions;
       case 'hr':
         return getHRActions()
       case 'admin':

@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Avatar,
-  Chip,
-  IconButton,
-  Divider,
+    Box,
+    Typography,
+    Card,
+    CardContent,
+    Grid,
+    Button,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Avatar,
+    Chip,
+    IconButton,
+    Divider,
 } from '@mui/material';
 import {
-  AccountBalanceWallet,
-  FileDownload,
-  Info,
-  Payment,
-  Timeline,
-  Receipt
+    AccountBalanceWallet,
+    FileDownload,
+    Info,
+    Payment,
+    Timeline,
+    Receipt
 } from '@mui/icons-material';
 import { payrollAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -72,17 +72,17 @@ const MyPayroll = () => {
                             </Box>
                         </CardContent>
                     </Card>
-                    
+
                     <Box sx={{ p: 3, bgcolor: '#fff', borderRadius: 6, border: '1px solid #eee' }}>
                         <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>Summary</Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body2" color="textSecondary">YTD Earnings</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>$0.00</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹0.00</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body2" color="textSecondary">Total Deductions</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>$0.00</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹0.00</Typography>
                             </Box>
                         </Box>
                     </Box>
@@ -109,14 +109,14 @@ const MyPayroll = () => {
                                         payrolls.map(p => (
                                             <TableRow key={p.id} hover>
                                                 <TableCell>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{months[p.month-1]}</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{months[p.month - 1]}</Typography>
                                                     <Typography variant="caption" color="textSecondary">{p.year}</Typography>
                                                 </TableCell>
-                                                <TableCell sx={{ fontWeight: 800 }}>${p.netSalary.toLocaleString()}</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }}>₹{p.netSalary.toLocaleString()}</TableCell>
                                                 <TableCell>
-                                                    <Chip 
-                                                        label={p.status.toUpperCase()} 
-                                                        size="small" 
+                                                    <Chip
+                                                        label={p.status.toUpperCase()}
+                                                        size="small"
                                                         color={p.status === 'paid' ? 'success' : 'warning'}
                                                         sx={{ fontWeight: 800, fontSize: '0.6rem' }}
                                                     />

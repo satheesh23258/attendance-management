@@ -33,9 +33,12 @@ import {
   Receipt,
   Search,
   FilterList,
-  Visibility
+  Visibility,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
-import { payrollAPI } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { payrollAPI, reportsAPI, employeeAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
 
@@ -45,6 +48,7 @@ const PayrollManagement = () => {
   const [genDialog, setGenDialog] = useState(false);
   const [genData, setGenData] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear() });
   const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPayrolls();
@@ -59,6 +63,48 @@ const PayrollManagement = () => {
       toast.error('Failed to load payroll data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      toast.loading('Downloading payroll report...');
+      const response = await reportsAPI.exportPayroll();
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'payroll_report.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.dismiss();
+      toast.success('Download started');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Export failed');
+    }
+  };
+
+  const handleDownloadPayslip = async (employeeId, month) => {
+    try {
+      toast.loading('Generating payslip PDF...');
+      const response = await employeeAPI.getPayslip(employeeId, month);
+      
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payslip_${month}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.dismiss();
+      toast.success('Payslip downloaded');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to download payslip');
     }
   };
 
@@ -95,55 +141,100 @@ const PayrollManagement = () => {
 
   return (
     <DashboardLayout title="Financial & Payroll Hub">
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-         <Grid item xs={12} md={8}>
-            <Box sx={{ p: 4, bgcolor: '#000', color: '#fff', borderRadius: 6, position: 'relative', overflow: 'hidden' }}>
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Financial & Payroll Hub
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Automate payroll processing and disbursement
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchPayrolls} title="Refresh">
+            <Refresh />
+          </IconButton>
+        </Box>
+      </Box>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          {/* Action Card */}
+          <Box sx={{
+            bgcolor: '#ffffff',
+            border: '1px solid #eee',
+            borderRadius: 4,
+            p: 4,
+            mb: 4,
+            position: 'relative', overflow: 'hidden' }}>
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>Payroll Automation</Typography>
-                    <Typography variant="body1" sx={{ opacity: 0.8, mb: 3, maxWidth: '500px' }}>
-                        Streamline your company's finances. Automatically calculate net salaries based on base pay, attendance, and approved claims.
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button 
-                            variant="contained" startIcon={<SettingsSuggest />} 
-                            onClick={() => setGenDialog(true)}
-                            sx={{ bgcolor: '#fff', color: '#000', borderRadius: 3, px: 3, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#eee' } }}
-                        >
-                            Generate Current Month
-                        </Button>
-                        <Button 
-                            variant="outlined" startIcon={<FileDownload />} 
-                            sx={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff', borderRadius: 3, px: 3, textTransform: 'none' }}
-                        >
-                            Export Reports
-                        </Button>
-                    </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: '#000' }}>Payroll Automation</Typography>
+                  <Typography variant="body1" sx={{ color: '#666', mb: 3, maxWidth: '500px' }}>
+                    Streamline your company's finances. Automatically calculate net salaries based on base pay, attendance, and approved claims.
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="contained" startIcon={<SettingsSuggest />}
+                      onClick={() => setGenDialog(true)}
+                      sx={{ bgcolor: '#00c853', color: '#fff', borderRadius: 3, px: 3, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#00a844' } }}
+                    >
+                      Generate Current Month
+                    </Button>
+                    <Button
+                      variant="outlined" startIcon={<FileDownload />}
+                      onClick={handleExport}
+                      sx={{ borderColor: '#ddd', color: '#666', borderRadius: 3, px: 3, textTransform: 'none' }}
+                    >
+                      Export Reports
+                    </Button>
+                  </Box>
                 </Box>
-                <Payments sx={{ position: 'absolute', right: -40, bottom: -40, fontSize: 240, opacity: 0.1, color: '#fff' }} />
-            </Box>
-         </Grid>
-         <Grid item xs={12} md={4}>
-            <Card sx={{ height: '100%', borderRadius: 6, border: '1px solid #eee' }} elevation={0}>
-                <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', textAlign: 'center' }}>
-                    <Avatar sx={{ width: 64, height: 64, bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', mx: 'auto', mb: 2 }}>
-                        <CheckCircle sx={{ fontSize: 32 }} />
-                    </Avatar>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>$142,500</Typography>
-                    <Typography color="textSecondary" variant="body2">Total Disbursed (Annual)</Typography>
-                </CardContent>
-            </Card>
-         </Grid>
+                <Payments sx={{ position: 'absolute', right: -40, bottom: -40, fontSize: 240, opacity: 0.1, color: '#00c853' }} />
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ height: '100%', borderRadius: 6, border: '1px solid #eee' }} elevation={0}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', textAlign: 'center' }}>
+              <Avatar sx={{ width: 64, height: 64, bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', mx: 'auto', mb: 2 }}>
+                <CheckCircle sx={{ fontSize: 32 }} />
+              </Avatar>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>₹142,500</Typography>
+              <Typography color="textSecondary" variant="body2">Total Disbursed (Annual)</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
       <Card sx={{ borderRadius: 6, border: '1px solid #f0f0f0', overflow: 'hidden' }} elevation={0}>
         <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#fff' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>Detailed Disbursement Records</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField size="small" placeholder="Search employee..." sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
-                <Button variant="outlined" startIcon={<FilterList />} sx={{ borderRadius: 3, textTransform: 'none' }}>Filters</Button>
-            </Box>
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>Detailed Disbursement Records</Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField size="small" placeholder="Search employee..." sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+            <Button variant="outlined" startIcon={<FilterList />} sx={{ borderRadius: 3, textTransform: 'none' }}>Filters</Button>
+          </Box>
         </Box>
-        
+
         <TableContainer>
           <Table>
             <TableHead sx={{ bgcolor: '#fafafa' }}>
@@ -166,40 +257,45 @@ const PayrollManagement = () => {
                 payrolls.map((p) => (
                   <TableRow key={p.id} hover>
                     <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ width: 32, height: 32, bgcolor: '#696cff' }}>{p.employeeName.charAt(0)}</Avatar>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.employeeName}</Typography>
-                        </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: '#696cff' }}>{p.employeeName.charAt(0)}</Avatar>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.employeeName}</Typography>
+                      </Box>
                     </TableCell>
                     <TableCell>
-                        <Typography variant="body2">{months.find(m => m.v === p.month).n}, {p.year}</Typography>
+                      <Typography variant="body2">{months.find(m => m.v === p.month).n}, {p.year}</Typography>
                     </TableCell>
-                    <TableCell>${p.baseSalary.toLocaleString()}</TableCell>
+                    <TableCell>₹{p.baseSalary.toLocaleString()}</TableCell>
                     <TableCell>
-                        <Typography variant="body2" sx={{ color: p.expenses > 0 ? '#4caf50' : 'inherit', fontWeight: p.expenses > 0 ? 600 : 400 }}>
-                            +${p.expenses.toLocaleString()}
-                        </Typography>
+                      <Typography variant="body2" sx={{ color: p.expenses > 0 ? '#4caf50' : 'inherit', fontWeight: p.expenses > 0 ? 600 : 400 }}>
+                        +₹{p.expenses.toLocaleString()}
+                      </Typography>
                     </TableCell>
-                    <TableCell><Typography sx={{ fontWeight: 800, color: '#000' }}>${p.netSalary.toLocaleString()}</Typography></TableCell>
+                    <TableCell><Typography sx={{ fontWeight: 800, color: '#000' }}>₹{p.netSalary.toLocaleString()}</Typography></TableCell>
                     <TableCell>
-                        <Chip 
-                            label={p.status.toUpperCase()} 
-                            size="small" 
-                            color={p.status === 'paid' ? 'success' : 'warning'} 
-                            sx={{ fontWeight: 800, fontSize: '0.65rem' }} 
-                        />
+                      <Chip
+                        label={p.status.toUpperCase()}
+                        size="small"
+                        color={p.status === 'paid' ? 'success' : 'warning'}
+                        sx={{ fontWeight: 800, fontSize: '0.65rem' }}
+                      />
                     </TableCell>
                     <TableCell align="right">
-                        {p.status !== 'paid' ? (
-                          <Button 
-                            variant="contained" size="small" onClick={() => markAsPaid(p.id)}
-                            sx={{ bgcolor: '#000', borderRadius: 2, textTransform: 'none', px: 2 }}
-                          >
-                            Execute Payment
-                          </Button>
-                        ) : (
+                      {p.status !== 'paid' ? (
+                        <Button
+                          variant="contained" size="small" onClick={() => markAsPaid(p.id)}
+                          sx={{ bgcolor: '#000', borderRadius: 2, textTransform: 'none', px: 2 }}
+                        >
+                          Execute Payment
+                        </Button>
+                      ) : (
+                       <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <IconButton onClick={() => handleDownloadPayslip(p.employeeId, p.month)} title="Download Payslip">
+                            <FileDownload fontSize="small" />
+                          </IconButton>
                           <IconButton><Visibility fontSize="small" /></IconButton>
-                        )}
+                        </Box>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -213,36 +309,36 @@ const PayrollManagement = () => {
       <Dialog open={genDialog} onClose={() => setGenDialog(false)} PaperProps={{ sx: { borderRadius: 5, p: 1 } }}>
         <DialogTitle sx={{ fontWeight: 800 }}>Confirm Payroll Generation</DialogTitle>
         <DialogContent>
-            <Typography variant="body2" sx={{ mb: 3 }}>
-                This will create draft payroll entries for all active employees for the selected period.
-            </Typography>
-            <Grid container spacing={2}>
-                <Grid item xs={6}>
-                    <TextField 
-                        select fullWidth label="Month" value={genData.month} 
-                        onChange={(e) => setGenData({...genData, month: e.target.value})}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                    >
-                        {months.map(m => <MenuItem key={m.v} value={m.v}>{m.n}</MenuItem>)}
-                    </TextField>
-                </Grid>
-                <Grid item xs={6}>
-                    <TextField 
-                        type="number" fullWidth label="Year" value={genData.year}
-                        onChange={(e) => setGenData({...genData, year: e.target.value})}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                    />
-                </Grid>
+          <Typography variant="body2" sx={{ mb: 3 }}>
+            This will create draft payroll entries for all active employees for the selected period.
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                select fullWidth label="Month" value={genData.month}
+                onChange={(e) => setGenData({ ...genData, month: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+              >
+                {months.map(m => <MenuItem key={m.v} value={m.v}>{m.n}</MenuItem>)}
+              </TextField>
             </Grid>
+            <Grid item xs={6}>
+              <TextField
+                type="number" fullWidth label="Year" value={genData.year}
+                onChange={(e) => setGenData({ ...genData, year: e.target.value })}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setGenDialog(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
-            <Button 
-                variant="contained" onClick={handleGenerate} disabled={submitting}
-                sx={{ bgcolor: '#000', color: '#fff', borderRadius: 3, px: 4, textTransform: 'none' }}
-            >
-                {submitting ? 'Processing...' : 'Generate Now'}
-            </Button>
+          <Button onClick={() => setGenDialog(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button
+            variant="contained" onClick={handleGenerate} disabled={submitting}
+            sx={{ bgcolor: '#000', color: '#fff', borderRadius: 3, px: 4, textTransform: 'none' }}
+          >
+            {submitting ? 'Processing...' : 'Generate Now'}
+          </Button>
         </DialogActions>
       </Dialog>
     </DashboardLayout>

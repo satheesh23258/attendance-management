@@ -20,7 +20,7 @@ if (!root) {
   try {
     ReactDOM.createRoot(root).render(
       <React.StrictMode>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <RoleThemeProvider role="hybrid">
             <AuthProvider>
               <App />

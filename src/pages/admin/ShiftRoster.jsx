@@ -27,8 +27,11 @@ import {
   MoreVert,
   WbSunny,
   NightsStay,
-  Schedule
+  Schedule,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { shiftAPI, employeeAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
@@ -40,6 +43,7 @@ const ShiftRoster = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [openAssign, setOpenAssign] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -118,6 +122,43 @@ const ShiftRoster = () => {
 
   return (
     <DashboardLayout title="Employee Shift Roster">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Employee Shift Roster
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Manage employee work schedules and rotations
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchData} title="Refresh">
+            <Refresh />
+          </IconButton>
+        </Box>
+      </Box>
+
       {/* Control Bar */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

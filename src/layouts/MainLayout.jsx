@@ -45,16 +45,33 @@ import {
   Payments
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
+import { notificationAPI } from '../services/api'
 import { Collapse, Button } from '@mui/material'
+import { useEffect } from 'react'
 
 const drawerWidth = 240
 
 const MainLayout = ({ children }) => {
   const [open, setOpen] = useState(true)
   const [anchorEl, setAnchorEl] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        if (user) {
+          const res = await notificationAPI.getUnreadCount()
+          setUnreadCount(res.data.count)
+        }
+      } catch (err) {
+        console.warn('Failed to fetch unread count')
+      }
+    }
+    fetchUnreadCount()
+  }, [user, location.pathname])
 
   const themeColor = user?.role === 'employee'
     ? '#2f80ed'
@@ -107,35 +124,49 @@ const MainLayout = ({ children }) => {
     // If user has hybrid access (employee granted HR), expose hybrid dashboard
     if (user?.hybrid) {
       items.push({ text: 'Hybrid Dashboard', icon: <Dashboard />, path: '/dashboard/hybrid' })
+      
+      // Specifically allow Attendance Management for authorized hybrid users
+      if (user?.hybridPermissions?.permissions?.canManageAttendance) {
+        items.push({ text: 'Attendance Management', icon: <AccessTime />, path: '/hr/attendance-management' });
+      }
+
+      // Live Tracking reserved for HR-capable hybrid users or specifically granted
+      if (user?.hybridPermissions?.permissions?.canAccessHR) {
+        items.push({ text: 'Live Tracking', icon: <LocationOn />, path: '/location/tracking' });
+      }
     }
-    
+
     // Exact mapping from QuickActions for Admin
     if (roleMap === 'admin') {
       items.push(
         { text: 'Manage Employees', icon: <People />, path: '/admin/manage-employees' },
+        { text: 'Attendance Management', icon: <AccessTime />, path: '/hr/attendance-management' },
         { text: 'Manage Hybrid Permissions', icon: <Security />, path: '/admin/manage-permissions' },
+        { text: 'Send Notifications', icon: <Notifications />, path: '/admin/notifications' },
         { text: 'View Services', icon: <Assignment />, path: '/admin/services' },
-        { text: 'View Reports', icon: <Assessment />, path: '/admin/system-reports' },
         { text: 'Live Tracking', icon: <LocationOn />, path: '/location/tracking' },
+        { text: 'Mark My Attendance', icon: <AccessTime />, path: '/employee/checkinout' },
         { text: 'Expense Approvals', icon: <AccountBalanceWallet />, path: '/admin/expenses' },
-        { text: 'System Audit Logs', icon: <HistoryEdu />, path: '/admin/audit-logs' },
-        { text: 'Payroll Management', icon: <Payments />, path: '/admin/payroll' },
-        { text: 'Asset Inventory', icon: <Inventory />, path: '/admin/asset-inventory' },
+
+
+
         { text: 'Shift Roster', icon: <CalendarMonth />, path: '/admin/shift-roster' }
       )
     }
 
     // Exact mapping from QuickActions for HR
-    if (roleMap === 'hr' || user?.hybrid) {
+    const hasHRAccess = roleMap === 'hr'
+    
+    if (hasHRAccess) {
       items.push(
         { text: 'Employee Records', icon: <People />, path: '/hr/employee-records' },
         { text: 'Attendance Reports', icon: <Assignment />, path: '/hr/attendance-reports' },
         { text: 'Attendance Management', icon: <AccessTime />, path: '/hr/attendance-management' },
-        { text: 'Performance Reviews', icon: <Assessment />, path: '/hr/performance' },
         { text: 'Live Tracking', icon: <LocationOn />, path: '/location/tracking' },
+        { text: 'Mark My Attendance', icon: <AccessTime />, path: '/employee/checkinout' },
         { text: 'Leave Application', icon: <LocationOn />, path: '/hr/leave-application' },
         { text: 'Expense Approvals', icon: <AccountBalanceWallet />, path: '/hr/expenses' },
-        { text: 'Payroll Hub', icon: <Payments />, path: '/hr/payroll' },
+
         { text: 'Shift Management', icon: <CalendarMonth />, path: '/hr/shift-roster' }
       )
     }
@@ -144,12 +175,12 @@ const MainLayout = ({ children }) => {
     if (roleMap === 'employee') {
       items.push(
         { text: 'Attendance History', icon: <AccessTime />, path: '/employee/attendance' },
+        { text: 'My Attendance', icon: <AccessTime />, path: '/employee/checkinout' },
         { text: 'My Location', icon: <LocationOn />, path: '/employee/location' },
         { text: 'My Services', icon: <Assignment />, path: '/employee/services' },
         { text: 'My Profile', icon: <AccountCircle />, path: '/employee/profile' },
-        { text: 'Leave Application', icon: <AccessTime />, path: '/employee/leave-application' },
+        { text: 'My Leave Request', icon: <AccessTime />, path: '/employee/leave-application' },
         { text: 'Expense Claims', icon: <ReceiptLong />, path: '/employee/expenses' },
-        { text: 'Financial Hub', icon: <Payments />, path: '/employee/payroll' },
         { text: 'Helpdesk & Support', icon: <ContactSupport />, path: '/employee/support' }
       )
     }
@@ -193,7 +224,7 @@ const MainLayout = ({ children }) => {
 
           <Tooltip title="Notifications">
             <IconButton color="inherit" onClick={() => navigate('/notifications')} sx={{ mr: 1 }}>
-              <Badge badgeContent={3} color="error">
+              <Badge badgeContent={unreadCount} color="error">
                 <Notifications />
               </Badge>
             </IconButton>
@@ -273,26 +304,26 @@ const MainLayout = ({ children }) => {
           </IconButton>
         </Toolbar>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
-        
+
         {/* Search Bar matching ref image */}
         <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            bgcolor: 'rgba(255,255,255,0.05)', 
-            borderRadius: 8, 
-            px: 2, 
-            py: 0.5, 
-            border: '1px solid rgba(255,255,255,0.1)' 
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            bgcolor: 'rgba(255,255,255,0.05)',
+            borderRadius: 8,
+            px: 2,
+            py: 0.5,
+            border: '1px solid rgba(255,255,255,0.1)'
           }}>
-            <InputBase 
-              placeholder="Search" 
-              sx={{ color: '#fff', flex: 1, fontSize: '0.9rem' }} 
+            <InputBase
+              placeholder="Search"
+              sx={{ color: '#fff', flex: 1, fontSize: '0.9rem' }}
             />
             <SearchIcon sx={{ color: '#a1a3b1', fontSize: 20 }} />
           </Box>
         </Box>
-        
+
         {/* User Card */}
         <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <Avatar src={user?.avatar} sx={{ width: 40, height: 40, bgcolor: '#696cff' }}>
@@ -311,6 +342,13 @@ const MainLayout = ({ children }) => {
         <List sx={{ px: 1, py: 2 }}>
           {getMenuItems().map((item) => {
             const isSelected = location.pathname === item.path;
+            const itemBgColor = isSelected 
+              ? (user?.role === 'employee' ? '#00c853' : '#7367f0') 
+              : 'transparent';
+            const itemShadow = isSelected 
+              ? (user?.role === 'employee' ? '0 2px 6px rgba(0, 200, 83, 0.4)' : '0 2px 6px rgba(115, 103, 240, 0.4)') 
+              : 'none';
+
             return (
               <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
@@ -331,10 +369,10 @@ const MainLayout = ({ children }) => {
                     }
                   }}
                 >
-                  <ListItemIcon sx={{ 
+                  <ListItemIcon sx={{
                     color: isSelected ? '#ffffff' : '#c2c4d1',
                     minWidth: 40,
-                    bgcolor: isSelected ? '#7367f0' : 'transparent',
+                    bgcolor: itemBgColor,
                     p: isSelected ? 0.6 : 0,
                     borderRadius: isSelected ? 1.5 : 0,
                     display: 'flex',
@@ -343,17 +381,17 @@ const MainLayout = ({ children }) => {
                     width: isSelected ? 32 : 'auto',
                     height: isSelected ? 32 : 'auto',
                     mr: isSelected ? 1.5 : 2,
-                    boxShadow: isSelected ? '0 2px 6px rgba(115, 103, 240, 0.4)' : 'none'
+                    boxShadow: itemShadow
                   }}>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.9rem', 
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: '0.9rem',
                       fontWeight: isSelected ? 600 : 400,
                       color: isSelected ? '#ffffff' : '#c2c4d1'
-                    }} 
+                    }}
                   />
                 </ListItemButton>
               </ListItem>

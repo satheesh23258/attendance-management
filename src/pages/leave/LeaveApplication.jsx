@@ -60,6 +60,27 @@ import { useNavigate } from 'react-router-dom'
 import { leaveAPI, notificationAPI } from '../../services/api'
 import DashboardLayout from '../../components/DashboardLayout'
 
+const formatDate = (dateStr) => {
+  if (!dateStr || dateStr === 'N/A' || dateStr === 'undefined') return 'N/A';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+const calculateDaysDiff = (start, end, isHalfDay = false) => {
+  if (!start || !end) return 1;
+  const s = new Date(start);
+  const e = new Date(end);
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return 1;
+  const diffTime = Math.abs(e - s);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return isHalfDay ? diffDays - 0.5 : diffDays;
+}
+
 const LeaveApplication = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -105,16 +126,22 @@ const LeaveApplication = () => {
       setLoading(true)
       // Different API calls based on role and tab
       let response
-      if (isEmployee && activeTab === 1) {
+      if (isEmployee) {
+        // For employees, always fetch their requests to show below the form
         response = await leaveAPI.getMyLeaves()
-      } else if ((isHR || isAdmin) && (activeTab === 2 || (!isEmployee && activeTab === 0))) {
-        // Adjust tab index logic based on what tabs are shown
+      } else if ((isHR || isAdmin)) {
+        // For HR/Admin, fetch all requests
         response = await leaveAPI.getAll()
       }
 
       if (response) {
-        const data = response.data.data || response.data || []
-        setLeaveRequests(data)
+        const rawData = response.data.data || response.data || []
+        const formattedData = rawData.map(item => ({
+          ...item,
+          id: item.id || item._id,
+          appliedDate: item.appliedDate || (item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : 'N/A')
+        }))
+        setLeaveRequests(formattedData)
       } else if (isEmployee && activeTab === 0) {
         // Apply tab - no fetch needed
       }
@@ -170,44 +197,21 @@ const LeaveApplication = () => {
     }))
   }
 
-  const calculateDays = () => {
+  useEffect(() => {
     if (formData.startDate && (formData.endDate || formData.leaveType === 'permission')) {
-      const start = new Date(formData.startDate)
-
       if (formData.leaveType === 'permission') {
-        // For permissions, it's just 1 day but we track hours
-        setFormData(prev => ({ ...prev, days: 0, endDate: prev.startDate }))
+        if (formData.days !== 0) {
+          setFormData(prev => ({ ...prev, days: 0, endDate: prev.startDate }))
+        }
         return
       }
 
-      const end = new Date(formData.endDate)
-
-      // Validate that end date is not before start date
-      if (end < start) {
-        toast.error('End date cannot be before start date')
-        setFormData(prev => ({ ...prev, days: 0 }))
-        return
+      const days = calculateDaysDiff(formData.startDate, formData.endDate, formData.isHalfDay);
+      if (formData.days !== days) {
+        setFormData(prev => ({ ...prev, days: days }))
       }
-
-      // Calculate difference in days (inclusive)
-      const diffTime = Math.abs(end - start)
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-
-      // Apply half day logic
-      const actualDays = formData.isHalfDay ? diffDays - 0.5 : diffDays
-
-      setFormData(prev => ({
-        ...prev,
-        days: actualDays
-      }))
-    } else {
-      // Reset days if dates are not complete
-      setFormData(prev => ({
-        ...prev,
-        days: 0
-      }))
     }
-  }
+  }, [formData.startDate, formData.endDate, formData.leaveType, formData.isHalfDay])
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0]
@@ -407,8 +411,8 @@ const LeaveApplication = () => {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved': return '#4caf50'
-      case 'pending': return '#00c853'
+      case 'approved': return '#00c853'
+      case 'pending': return '#ff9800' // Keeping pending as orange/yellow for contrast, or I can make it light green
       case 'rejected': return '#f44336'
       case 'cancelled': return '#9e9e9e'
       default: return '#000000'
@@ -430,16 +434,13 @@ const LeaveApplication = () => {
       {/* Enhanced Header */}
       {/* Enhanced Header */}
       <Box sx={{
-        background: isEmployee
-          ? '#00c853'
-          : isAdmin
-            ? '#00c853'
-            : '#00c853',
+        background: '#00c853',
         color: 'white',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        mb: 0,
         borderRadius: '0 0 16px 16px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
@@ -448,12 +449,13 @@ const LeaveApplication = () => {
             color="inherit"
             onClick={() => navigate(-1)}
             sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
           >
             <ArrowBack />
           </IconButton>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              Leave {isEmployee && activeTab === 0 ? 'Application' : 'Management'}
+              Leave Portal
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.9 }}>
               {isEmployee && activeTab === 0
@@ -463,15 +465,11 @@ const LeaveApplication = () => {
           </Box>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {isHR && activeTab === 1 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Chip
-                label={`${getTodayRequestsCount()} Today`}
-                color="info"
-                variant="filled"
-                size="small"
-              />
-            </Box>
+          {isHR && (
+            <Chip
+              label={`${getTodayRequestsCount()} Today`}
+              sx={{ bgcolor: 'white', color: '#00c853', fontWeight: 700 }}
+            />
           )}
         </Box>
       </Box>
@@ -481,10 +479,7 @@ const LeaveApplication = () => {
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable">
           {/* Employee tabs */}
           {isEmployee && (
-            <>
-              <Tab label="Leave Application" icon={<Send />} />
-              <Tab label="My Requests" icon={<Description />} />
-            </>
+            <Tab label="Leave Dashboard" icon={<Description />} />
           )}
 
           {/* HR/Admin tabs - Only All Requests */}
@@ -495,24 +490,23 @@ const LeaveApplication = () => {
       </Box>
 
       <Box sx={{ p: 3 }}>
-        {/* Debug Information */}
-        <Box sx={{ mb: 2, p: 2, backgroundColor: '#f0f0f0', borderRadius: 1 }}>
-          <Typography variant="body2">
-            Debug Info: activeTab={activeTab}, isEmployee={String(isEmployee)}, isHR={String(isHR)}, isAdmin={String(isAdmin)}, userRole={user?.role || 'undefined'}
-          </Typography>
-          <Typography variant="body2">
-            Leave Requests Count: {leaveRequests.length}
-          </Typography>
-        </Box>
 
         {/* Tab Content */}
-        {/* Employee Tab 0: Leave Application */}
+        {/* Employee Tab 0: Unified Dashboard */}
         {isEmployee && activeTab === 0 && (
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Apply for Leave
-              </Typography>
+          <Box>
+            <Card sx={{ mb: 4 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: '#00c853', fontWeight: 700 }}>
+                    Apply for New Leave
+                  </Typography>
+                  <Chip
+                    label="Step 1: Fill details"
+                    size="small"
+                    sx={{ bgcolor: 'rgba(0, 200, 83, 0.1)', color: '#00c853', fontWeight: 'bold' }}
+                  />
+                </Box>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth>
@@ -542,7 +536,6 @@ const LeaveApplication = () => {
                     value={formData.startDate}
                     onChange={(e) => {
                       handleInputChange('startDate', e.target.value)
-                      calculateDays()
                     }}
                     InputLabelProps={{ shrink: true }}
                   />
@@ -580,7 +573,6 @@ const LeaveApplication = () => {
                         value={formData.endDate}
                         onChange={(e) => {
                           handleInputChange('endDate', e.target.value)
-                          calculateDays()
                         }}
                         InputLabelProps={{ shrink: true }}
                       />
@@ -600,7 +592,6 @@ const LeaveApplication = () => {
                               checked={formData.isHalfDay}
                               onChange={(e) => {
                                 handleInputChange('isHalfDay', e.target.checked)
-                                calculateDays()
                               }}
                               size="small"
                             />
@@ -700,226 +691,162 @@ const LeaveApplication = () => {
               </Grid>
             </CardContent>
           </Card>
-        )}
 
-        {/* Employee Tab 1: My Requests - Always show for testing */}
-        {activeTab === 1 && (
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6">
-                  My Leave Requests History
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Debug: User Role = {user?.role || 'undefined'}, Total Requests = {leaveRequests.length}
-                  </Typography>
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Filter by Status</InputLabel>
-                    <Select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value)}
-                      label="Filter by Status"
-                    >
-                      <MenuItem value="all">All Status</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="approved">Approved</MenuItem>
-                      <MenuItem value="rejected">Rejected</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <TextField
-                    size="small"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: <Search sx={{ fontSize: 16, color: '#666', mr: 1 }} />
-                    }}
-                  />
-                </Box>
-              </Box>
+          {/* Status Summary & History integrated below the form */}
+          <Box sx={{ mt: 5 }}>
+            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Description color="primary" /> My Leave Status & History
+            </Typography>
 
-              {/* Status Summary Cards */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} md={3}>
-                  <Card sx={{ backgroundColor: '#e8f5e8', border: '2px solid #4caf50' }}>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <CheckCircle sx={{ fontSize: 40, color: '#4caf50', mb: 1 }} />
-                      <Typography variant="h6" color="#4caf50">
-                        APPROVED
-                      </Typography>
-                      <Typography variant="body2">
-                        {leaveRequests.filter(r => r.status === 'approved').length} requests
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <Card sx={{ backgroundColor: '#fff3e0', border: '2px solid #00c853' }}>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Schedule sx={{ fontSize: 40, color: '#00c853', mb: 1 }} />
-                      <Typography variant="h6" color="#ff9800">
-                        PENDING
-                      </Typography>
-                      <Typography variant="body2">
-                        {leaveRequests.filter(r => r.status === 'pending').length} requests
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <Card sx={{ backgroundColor: '#ffebee', border: '2px solid #00c853' }}>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Cancel sx={{ fontSize: 40, color: '#00c853', mb: 1 }} />
-                      <Typography variant="h6" color="#f44336">
-                        REJECTED
-                      </Typography>
-                      <Typography variant="body2">
-                        {leaveRequests.filter(r => r.status === 'rejected').length} requests
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <Card sx={{ backgroundColor: '#e3f2fd', border: '2px solid #00c853' }}>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Event sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
-                      <Typography variant="h6" color="#2196f3">
-                        TOTAL DAYS
-                      </Typography>
-                      <Typography variant="body2">
-                        {leaveRequests.reduce((total, r) => total + r.days, 0)} days
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+            {/* Status Summary Cards */}
+            <Grid container spacing={2} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ backgroundColor: 'rgba(0, 200, 83, 0.05)', border: '1px solid #00c853', borderRadius: 2 }}>
+                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                    <CheckCircle sx={{ fontSize: 32, color: '#00c853', mb: 1 }} />
+                    <Typography variant="h6" color="#00c853" sx={{ fontWeight: 700 }}>
+                      APPROVED
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                      {leaveRequests.filter(r => r.status === 'approved').length}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ backgroundColor: 'rgba(255, 152, 0, 0.05)', border: '1px solid #ff9800', borderRadius: 2 }}>
+                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                    <Schedule sx={{ fontSize: 32, color: '#ff9800', mb: 1 }} />
+                    <Typography variant="h6" color="#ff9800" sx={{ fontWeight: 700 }}>
+                      PENDING
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                      {leaveRequests.filter(r => r.status === 'pending').length}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ backgroundColor: 'rgba(244, 67, 54, 0.05)', border: '1px solid #f44336', borderRadius: 2 }}>
+                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                    <Cancel sx={{ fontSize: 32, color: '#f44336', mb: 1 }} />
+                    <Typography variant="h6" color="#f44336" sx={{ fontWeight: 700 }}>
+                      REJECTED
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                      {leaveRequests.filter(r => r.status === 'rejected').length}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Card sx={{ backgroundColor: 'rgba(33, 150, 243, 0.05)', border: '1px solid #2196f3', borderRadius: 2 }}>
+                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                    <Event sx={{ fontSize: 32, color: '#2196f3', mb: 1 }} />
+                    <Typography variant="h6" color="#2196f3" sx={{ fontWeight: 700 }}>
+                      TOTAL DAYS
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                      {leaveRequests.reduce((total, r) => total + r.days, 0)}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
 
-              {/* Leave Requests Table */}
-              <TableContainer component={Paper} elevation={0}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Application ID</TableCell>
-                      <TableCell>Leave Type</TableCell>
-                      <TableCell>Duration</TableCell>
-                      <TableCell>Reason</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Applied Date</TableCell>
-                      <TableCell>Processed By</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {leaveRequests
-                      .filter(request => {
-                        const matchesStatus = filterStatus === 'all' || request.status === filterStatus
-                        const matchesSearch = searchTerm === '' ||
-                          request.leaveType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          request.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          request.appliedDate.includes(searchTerm)
-                        return matchesStatus && matchesSearch
-                      })
-                      .map((request) => (
-                        <TableRow key={request.id} hover>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                              #{request.id.toString().padStart(4, '0')}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={request.leaveType}
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                              {request.leaveType?.toLowerCase() === 'permission'
-                                ? 'Permission'
-                                : `${request.days} days`}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              {request.startDate}
-                              {request.leaveType?.toLowerCase() === 'permission' && request.startTime && (
-                                <> ({request.startTime} - {request.endTime})</>
-                              )}
-                              {request.leaveType?.toLowerCase() !== 'permission' && ` to ${request.endDate}`}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                              {request.reason.length > 50
-                                ? `${request.reason.substring(0, 50)}...`
-                                : request.reason
-                              }
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={(request.status || 'pending').toUpperCase()}
-                              size="small"
-                              icon={getStatusIcon(request.status)}
-                              sx={{
-                                backgroundColor: getStatusColor(request.status),
-                                color: 'white',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                            {request.rejectionReason && request.status?.toLowerCase() === 'rejected' && (
-                              <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
-                                Reason: {request.rejectionReason}
-                              </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {request.appliedDate}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {request.approvedBy || 'Pending'}
-                            </Typography>
-                            {request.approvedDate && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                {request.approvedDate}
-                              </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => handleViewDetails(request)}
-                            >
-                              View Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {leaveRequests.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="h6" color="text.secondary">
-                    No leave requests found
+            {/* Leave Requests Table History */}
+            <Card sx={{ borderRadius: 2, overflow: 'hidden' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Recent Requests
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    You haven't applied for any leave yet. Click on the "Leave Application" tab to submit your first request.
-                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      size="small"
+                      placeholder="Search requests..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      InputProps={{
+                        startAdornment: <Search sx={{ fontSize: 16, color: '#666', mr: 1 }} />
+                      }}
+                    />
+                  </Box>
                 </Box>
-              )}
-            </CardContent>
-          </Card>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Form</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Duration</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Processed By</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {leaveRequests
+                        .filter(request => {
+                          const matchesSearch = searchTerm === '' ||
+                            request.leaveType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            request.reason.toLowerCase().includes(searchTerm.toLowerCase())
+                          return matchesSearch
+                        })
+                        .map((request) => (
+                          <TableRow key={request.id || request._id} hover>
+                            <TableCell>#{String(request.id || request._id || '').slice(-4).toUpperCase()}</TableCell>
+                            <TableCell>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{request.leaveType.toUpperCase()}</Typography>
+                              <Typography variant="caption" color="text.secondary">{formatDate(request.appliedDate)}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2">{request.days || calculateDaysDiff(request.startDate, request.endDate)} Days</Typography>
+                              <Typography variant="caption" color="text.secondary">{formatDate(request.startDate)} to {formatDate(request.endDate)}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={(request.status || 'pending').toUpperCase()}
+                                size="small"
+                                sx={{
+                                  backgroundColor: getStatusColor(request.status),
+                                  color: 'white',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2">{request.approvedByName || 'Waiting'}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="small"
+                                variant="text"
+                                color="primary"
+                                onClick={() => handleViewDetails(request)}
+                                sx={{ textTransform: 'none' }}
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                {leaveRequests.length === 0 && (
+                  <Box sx={{ textAlign: 'center', py: 5 }}>
+                    <Typography color="text.secondary">No leave requests found.</Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
         )}
 
-
-        {/* HR/Admin Tab 0: All Requests */}
+        {/* HR/Admin sections remain as they were, but check Tab index */}
         {(isHR || isAdmin) && activeTab === 0 && (
           <Box>
             {/* HR Control Panel */}
@@ -1094,12 +1021,12 @@ const LeaveApplication = () => {
                     </TableHead>
                     <TableBody>
                       {getFilteredRequests().map((request) => (
-                        <TableRow key={request.id} hover>
+                        <TableRow key={request.id || request._id} hover>
                           <TableCell padding="checkbox">
                             <input
                               type="checkbox"
-                              checked={selectedRequests.includes(request.id)}
-                              onChange={() => handleSelectRequest(request.id)}
+                              checked={selectedRequests.includes(request.id || request._id)}
+                              onChange={() => handleSelectRequest(request.id || request._id)}
                               style={{ cursor: 'pointer' }}
                             />
                           </TableCell>
@@ -1129,14 +1056,14 @@ const LeaveApplication = () => {
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
-                              {request.leaveType?.toLowerCase() === 'permission' ? 'Permission' : `${request.days} days`}
+                              {request.leaveType?.toLowerCase() === 'permission' ? 'Permission' : `${request.days || calculateDaysDiff(request.startDate, request.endDate)} days`}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {request.startDate}
+                              {formatDate(request.startDate)}
                               {request.leaveType?.toLowerCase() === 'permission' && request.startTime && (
                                 <> ({request.startTime} - {request.endTime})</>
                               )}
-                              {request.leaveType?.toLowerCase() !== 'permission' && ` to ${request.endDate}`}
+                              {request.leaveType?.toLowerCase() !== 'permission' && ` to ${formatDate(request.endDate)}`}
                             </Typography>
                           </TableCell>
                           <TableCell>
@@ -1163,7 +1090,7 @@ const LeaveApplication = () => {
                               </Typography>
                             )}
                           </TableCell>
-                          <TableCell>{request.appliedDate}</TableCell>
+                          <TableCell>{formatDate(request.appliedDate)}</TableCell>
                           <TableCell>
                             <Chip
                               label={request.status}
@@ -1266,11 +1193,11 @@ const LeaveApplication = () => {
                   <Typography variant="body2">
                     <strong>Duration:</strong> {selectedRequest.leaveType?.toLowerCase() === 'permission'
                       ? `${selectedRequest.startTime} - ${selectedRequest.endTime}`
-                      : `${selectedRequest.days} days`}
+                      : `${selectedRequest.days || calculateDaysDiff(selectedRequest.startDate, selectedRequest.endDate)} days`}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Period:</strong> {selectedRequest.startDate}
-                    {selectedRequest.leaveType?.toLowerCase() !== 'permission' && ` to ${selectedRequest.endDate}`}
+                    <strong>Period:</strong> {formatDate(selectedRequest.startDate)}
+                    {selectedRequest.leaveType?.toLowerCase() !== 'permission' && ` to ${formatDate(selectedRequest.endDate)}`}
                   </Typography>
                   {selectedRequest.attachment && (
                     <Typography variant="body2"><strong>Attachment:</strong> 📎 {selectedRequest.attachment}</Typography>
@@ -1295,7 +1222,7 @@ const LeaveApplication = () => {
                   Application Status
                 </Typography>
                 <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
-                  <Typography variant="body2" sx={{ mb: 1 }}><strong>Applied:</strong> {selectedRequest.appliedDate}</Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}><strong>Applied:</strong> {formatDate(selectedRequest.appliedDate)}</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <Typography variant="body2"><strong>Status:</strong></Typography>
                     <Chip

@@ -134,13 +134,22 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('auth-expired', handleAuthExpired)
   }, [])
 
-  const login = async (credentials) => {
+  const login = async (credentials, requiredRole = null) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true })
 
-      const { data } = await authAPI.login(credentials)
-
+      const { data } = await authAPI.login({ ...credentials, requiredRole })
       const { user, token } = data
+
+      // Role check for specific portals
+      if (requiredRole) {
+        const hasAccess = user.role === requiredRole || 
+                         (user.hybridPermissions && user.hybridPermissions.roles?.includes(requiredRole));
+
+        if (!hasAccess) {
+          throw new Error(`Access Denied: This account is NOT registered as an ${requiredRole.toUpperCase()}. Please use the correct login portal.`)
+        }
+      }
 
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(user))
@@ -153,6 +162,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE' })
       const message = error.response?.data?.message || error.message || 'Login failed'
+      // If error is from our manual throw, it was an error string, otherwise it's from catch
       toast.error(message)
       return { success: false, error: message }
     }

@@ -11,21 +11,31 @@ const router = express.Router();
 // @access  Private (Employee, HR, Admin)
 router.post('/', protect, async (req, res) => {
     try {
-        const { leaveType, startDate, endDate, reason } = req.body;
+        const { leaveType, startDate, endDate, reason, days, startTime, endTime, emergencyContact } = req.body;
         
         let empName = req.user.name;
-        if (!empName) {
-            const emp = await Employee.findOne({ email: req.user.email });
-            empName = emp ? emp.name : 'Unknown Employee';
+        let dept = '';
+        
+        const emp = await Employee.findOne({ email: req.user.email });
+        if (emp) {
+            if (!empName) empName = emp.name;
+            dept = emp.department;
+        } else {
+            empName = empName || 'Unknown Employee';
         }
 
         const leave = await Leave.create({
             employeeId: req.user._id,
             employeeName: empName,
+            department: dept,
             leaveType,
             startDate,
             endDate,
             reason,
+            days,
+            startTime,
+            endTime,
+            emergencyContact,
             status: 'pending',
         });
 

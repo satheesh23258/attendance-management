@@ -298,62 +298,6 @@ const Analytics = () => {
           </Grid>
         </Grid>
 
-        {/* Performance Metrics */}
-        <Typography variant="h6" gutterBottom>
-          Performance Metrics
-        </Typography>
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={4}>
-            <MetricCard
-              title="Avg Performance Score"
-              value={analyticsData.performanceMetrics.avgPerformanceScore}
-              subtitle="Out of 5.0"
-              trend={0.4}
-              color="primary"
-              icon={<Assessment />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <MetricCard
-              title="High Performers"
-              value={analyticsData.performanceMetrics.highPerformers}
-              subtitle="Score ≥ 4.5"
-              trend={12.5}
-              color="success"
-              icon={<TrendingUp />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <MetricCard
-              title="Meeting Targets"
-              value={`${analyticsData.performanceMetrics.meetingTargets}%`}
-              subtitle="Of employees"
-              trend={5.2}
-              color="info"
-              icon={<Assessment />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <MetricCard
-              title="Training Completion"
-              value={`${analyticsData.performanceMetrics.trainingCompletion}%`}
-              subtitle="Of assigned courses"
-              trend={3.8}
-              color="success"
-              icon={<TrendingUp />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <MetricCard
-              title="Promotion Rate"
-              value={`${analyticsData.performanceMetrics.promotionRate}%`}
-              subtitle="Annual rate"
-              trend={1.1}
-              color="warning"
-              icon={<TrendingUp />}
-            />
-          </Grid>
-        </Grid>
 
         {/* Financial Metrics */}
         <Typography variant="h6" gutterBottom>
@@ -445,15 +389,6 @@ const Analytics = () => {
                   onClick={() => alert('Generate attendance analysis')}
                 >
                   Attendance Analysis
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button 
-                  variant="contained" 
-                  fullWidth
-                  onClick={() => alert('Generate performance summary')}
-                >
-                  Performance Summary
                 </Button>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>

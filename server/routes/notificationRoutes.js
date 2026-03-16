@@ -100,4 +100,30 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// POST create notification (Admin only)
+router.post('/', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can create broadcast notifications' });
+    }
+
+    const { title, message, type, targetRole, importance, actionUrl } = req.body;
+
+    const notification = new Notification({
+      title,
+      message,
+      type: type || 'general',
+      targetRole: targetRole || 'all',
+      importance: importance || 'normal',
+      actionUrl: actionUrl || '',
+      isRead: false
+    });
+
+    await notification.save();
+    res.status(201).json(notification);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

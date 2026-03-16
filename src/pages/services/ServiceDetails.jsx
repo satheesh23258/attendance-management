@@ -69,13 +69,25 @@ const ServiceDetails = () => {
       const employees = employeesRes.data.data || employeesRes.data || []
 
       if (serviceData.assignedTo) {
-        const assigned = employees.find(u => u.id === serviceData.assignedTo || u._id === serviceData.assignedTo)
-        setAssignedUser(assigned)
+        if (typeof serviceData.assignedTo === 'object') {
+          setAssignedUser(serviceData.assignedTo)
+        } else {
+          const assigned = employees.find(u => u.id === serviceData.assignedTo || u._id === serviceData.assignedTo)
+          setAssignedUser(assigned || { name: serviceData.assignedToName || 'Unknown' })
+        }
+      } else if (serviceData.assignedToName) {
+        setAssignedUser({ name: serviceData.assignedToName })
       }
 
       if (serviceData.createdBy) {
-        const createdBy = employees.find(u => u.id === serviceData.createdBy || u._id === serviceData.createdBy)
-        setCreatedByUser(createdBy)
+        if (typeof serviceData.createdBy === 'object') {
+          setCreatedByUser(serviceData.createdBy)
+        } else {
+          const createdBy = employees.find(u => u.id === serviceData.createdBy || u._id === serviceData.createdBy)
+          setCreatedByUser(createdBy || { name: serviceData.createdByName || 'Unknown' })
+        }
+      } else if (serviceData.createdByName) {
+        setCreatedByUser({ name: serviceData.createdByName })
       }
 
       // Initialize comments if they exist in the service object, otherwise default to empty
@@ -169,7 +181,14 @@ const ServiceDetails = () => {
 
   const isAdmin = user?.role === 'admin'
   const isHR = user?.role === 'hr'
-  const isAssigned = service?.assignedTo === user?.id || service?.assignedTo?._id === user?.id
+  
+  const getAssignedId = (assignedTo) => {
+    if (!assignedTo) return null;
+    return (typeof assignedTo === 'object') ? (assignedTo.id || assignedTo._id) : assignedTo;
+  }
+
+  const userId = user?.id || user?._id;
+  const isAssigned = getAssignedId(service?.assignedTo) === userId;
 
   if (loading) {
     return (
@@ -464,35 +483,6 @@ const ServiceDetails = () => {
 
         {/* Sidebar */}
         <Grid item xs={12} md={4}>
-          {/* Quick Actions */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Quick Actions
-              </Typography>
-              <Box display="flex" flexDirection="column" gap={1}>
-                <Button
-                  variant="outlined"
-                  startIcon={<Comment />}
-                  onClick={() => setCommentDialogOpen(true)}
-                  fullWidth
-                >
-                  Add Comment
-                </Button>
-                {(isAdmin || isHR) && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Edit />}
-                    onClick={handleEdit}
-                    fullWidth
-                  >
-                    Edit Service
-                  </Button>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-
           {/* Service Timeline */}
           <Card>
             <CardContent>

@@ -35,11 +35,13 @@ import {
   AccessTime,
   CheckCircle,
   Cancel,
-  Schedule
+  Schedule,
+  Refresh
 } from '@mui/icons-material'
-import { attendanceAPI } from '../../services/api'
+import { attendanceAPI, reportsAPI } from '../../services/api'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import DashboardLayout from '../../components/DashboardLayout'
 
 const AttendanceReports = () => {
   const navigate = useNavigate()
@@ -80,17 +82,24 @@ const AttendanceReports = () => {
 
   const handleExport = async () => {
     try {
-      toast.loading('Generating report...')
-      // In a real scenario, this would trigger an API call to download a file
-      // For now we can just show a success message as the backend export might need specific handling
-      // await reportsAPI.exportReport('attendance', { date: filterDate, department: filterDepartment })
-
-      // Simulating export for demonstration of UI interaction if backend not ready for blob
-      setTimeout(() => toast.dismiss(), 1000)
-      setTimeout(() => toast.success('Report generated successfully'), 1000)
-
-      generateAttendancePDF() // Keep existing PDF generation as fallback/frontend-only option
+      toast.loading('Downloading attendance report...')
+      const response = await reportsAPI.exportAttendance({
+        startDate: filterDate,
+        department: filterDepartment
+      })
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `attendance_report_${new Date().toISOString().split('T')[0]}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      
+      toast.dismiss()
+      toast.success('Report downloaded successfully')
     } catch (error) {
+      toast.dismiss()
       toast.error('Failed to export report')
     }
   }
@@ -248,23 +257,41 @@ const AttendanceReports = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
+    <DashboardLayout title="Attendance Reports">
+      {/* Header Banner */}
       <Box sx={{
-        backgroundColor: '#000000', // Enforced Yellow Theme
-        color: 'black',
+        background: '#00c853',
+        color: 'white',
         p: 3,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            Attendance Reports
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Attendance Reports
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Detailed insights into employee attendance patterns
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchAttendanceData} title="Refresh">
+            <Refresh />
+          </IconButton>
         </Box>
       </Box>
 
@@ -584,7 +611,7 @@ const AttendanceReports = () => {
           </DialogActions>
         </Dialog>
       </Box>
-    </Box>
+    </DashboardLayout>
   )
 }
 

@@ -31,6 +31,7 @@ import serviceRoutes from './routes/serviceRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import assetRoutes from './routes/assetRoutes.js';
 
 import hybridPermissionRoutes from './routes/hybridPermissionRoutes.js';
 
@@ -73,65 +74,152 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/assets', assetRoutes);
 
 app.use('/api/hybrid-permissions', hybridPermissionRoutes);
 import leaveRoutes from './routes/leaveRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
-import auditRoutes from './routes/auditRoutes.js';
+
 import payrollRoutes from './routes/payrollRoutes.js';
 import shiftRoutes from './routes/shiftRoutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
-import assetRoutes from './routes/assetRoutes.js';
+
 
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/expenses', expenseRoutes);
-app.use('/api/audit', auditRoutes);
+
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/tickets', ticketRoutes);
-app.use('/api/assets', assetRoutes);
+import reportsRoutes from './routes/reportsRoutes.js';
+app.use('/api/reports', reportsRoutes);
+
 
 // Seed database with UI data if empty
 const seedDatabase = async () => {
-  // Check if employees exist to avoid re-seeding
-  const count = await Employee.countDocuments();
-  if (count > 0) return;
+  // Check and seed Employees
+  let employeeCount = await Employee.countDocuments();
+  let ids = {};
+  
+  if (employeeCount === 0) {
+    const mockEmployees = [
+      { name: 'John Admin', email: 'admin@company.com', role: 'admin', department: 'IT', phone: '+1234567890', avatar: 'https://i.pravatar.cc/150?img=1', isActive: true, joinDate: '2022-01-15', employeeId: 'EMP001' },
+      { name: 'Sarah HR', email: 'hr@company.com', role: 'hr', department: 'Human Resources', phone: '+1234567891', avatar: 'https://i.pravatar.cc/150?img=5', isActive: true, joinDate: '2022-02-20', employeeId: 'EMP002' },
+      { name: 'Mike Employee', email: 'mike@company.com', role: 'employee', department: 'Sales', phone: '+1234567892', avatar: 'https://i.pravatar.cc/150?img=3', isActive: true, joinDate: '2022-03-10', employeeId: 'EMP003' },
+      { name: 'Jane Developer', email: 'jane@company.com', role: 'employee', department: 'IT', phone: '+1234567893', avatar: 'https://i.pravatar.cc/150?img=4', isActive: true, joinDate: '2022-04-05', employeeId: 'EMP004' },
+    ];
+    const created = await Employee.insertMany(mockEmployees);
+    ids = { 1: created[0]._id, 2: created[1]._id, 3: created[2]._id, 4: created[3]._id };
+    console.log('✓ Seeded: employees');
+  } else {
+    // Get existing IDs for seeding other collections
+    const admins = await Employee.find({ role: 'admin' }).limit(1);
+    const hrs = await Employee.find({ role: 'hr' }).limit(1);
+    const emps = await Employee.find({ role: 'employee' }).limit(2);
+    ids = { 
+      1: admins[0]?._id, 
+      2: hrs[0]?._id, 
+      3: emps[0]?._id, 
+      4: emps[1]?._id 
+    };
+  }
 
-  const mockEmployees = [
-    { name: 'John Admin', email: 'admin@company.com', role: 'admin', department: 'IT', phone: '+1234567890', avatar: 'https://i.pravatar.cc/150?img=1', isActive: true, joinDate: '2022-01-15', employeeId: 'EMP001' },
-    { name: 'Sarah HR', email: 'hr@company.com', role: 'hr', department: 'Human Resources', phone: '+1234567891', avatar: 'https://i.pravatar.cc/150?img=5', isActive: true, joinDate: '2022-02-20', employeeId: 'EMP002' },
-    { name: 'Mike Employee', email: 'mike@company.com', role: 'employee', department: 'Sales', phone: '+1234567892', avatar: 'https://i.pravatar.cc/150?img=3', isActive: true, joinDate: '2022-03-10', employeeId: 'EMP003' },
-    { name: 'Jane Developer', email: 'jane@company.com', role: 'employee', department: 'IT', phone: '+1234567893', avatar: 'https://i.pravatar.cc/150?img=4', isActive: true, joinDate: '2022-04-05', employeeId: 'EMP004' },
-  ];
+  // Seed Attendance if empty
+  if (await Attendance.countDocuments() === 0 && ids[3]) {
+    await Attendance.insertMany([
+      { employeeId: ids[3], employeeName: 'Mike Employee', date: '2024-01-25', checkIn: '09:00:00', checkOut: '18:00:00', status: 'present', workingHours: 9, overtime: 0, location: { lat: 11.27218, lng: 77.604, address: 'Kongu Engineering College' } },
+      { employeeId: ids[4], employeeName: 'Jane Developer', date: '2024-01-25', checkIn: '08:45:00', checkOut: '17:30:00', status: 'present', workingHours: 8.75, overtime: 0, location: { lat: 11.27218, lng: 77.604, address: 'Kongu Engineering College' } },
 
-  const created = await Employee.insertMany(mockEmployees);
-  const ids = { 1: created[0]._id, 2: created[1]._id, 3: created[2]._id, 4: created[3]._id };
+    ]);
+    console.log('✓ Seeded: attendance');
+  }
 
-  await Attendance.insertMany([
-    { employeeId: ids[3], employeeName: 'Mike Employee', date: '2024-01-25', checkIn: '09:00:00', checkOut: '18:00:00', status: 'present', workingHours: 9, overtime: 0, location: { lat: 40.7128, lng: -74.006, address: 'Office Main Building' } },
-    { employeeId: ids[4], employeeName: 'Jane Developer', date: '2024-01-25', checkIn: '08:45:00', checkOut: '17:30:00', status: 'present', workingHours: 8.75, overtime: 0, location: { lat: 40.7128, lng: -74.006, address: 'Office Main Building' } },
-    { employeeId: ids[3], employeeName: 'Mike Employee', date: '2024-01-24', checkIn: '09:15:00', checkOut: '18:30:00', status: 'present', workingHours: 9.25, overtime: 0.25, location: { lat: 40.7128, lng: -74.006, address: 'Office Main Building' } },
-  ]);
+  // Seed Services if empty
+  if (await Service.countDocuments() === 0 && ids[4]) {
+    await Service.insertMany([
+      { title: 'Fix Network Issue', description: 'Resolve network connectivity problems in floor 3', priority: 'high', status: 'pending', assignedTo: ids[4], assignedToName: 'Jane Developer', createdBy: ids[1], createdByName: 'John Admin', dueDate: new Date('2024-01-26'), category: 'IT Support', location: { lat: 11.27218, lng: 77.604, address: 'CSE Department, KEC' } },
+      { title: 'Install New Software', description: 'Install accounting software on finance department computers', priority: 'medium', status: 'in_progress', assignedTo: ids[3], assignedToName: 'Mike Employee', createdBy: ids[2], createdByName: 'Sarah HR', dueDate: new Date('2024-01-27'), category: 'IT Support', location: { lat: 11.27218, lng: 77.604, address: 'MBA Department, KEC' } },
 
-  await Service.insertMany([
-    { title: 'Fix Network Issue', description: 'Resolve network connectivity problems in floor 3', priority: 'high', status: 'pending', assignedTo: ids[4], assignedToName: 'Jane Developer', createdBy: ids[1], createdByName: 'John Admin', dueDate: new Date('2024-01-26'), category: 'IT Support', location: { lat: 40.7128, lng: -74.006, address: 'Floor 3, Office Building' } },
-    { title: 'Install New Software', description: 'Install accounting software on finance department computers', priority: 'medium', status: 'in_progress', assignedTo: ids[3], assignedToName: 'Mike Employee', createdBy: ids[2], createdByName: 'Sarah HR', dueDate: new Date('2024-01-27'), category: 'IT Support', location: { lat: 40.7128, lng: -74.006, address: 'Finance Department' } },
-    { title: 'Office Maintenance', description: 'Repair air conditioning system in conference room', priority: 'low', status: 'completed', assignedTo: ids[3], assignedToName: 'Mike Employee', createdBy: ids[1], createdByName: 'John Admin', completedAt: new Date('2024-01-24T16:30:00'), category: 'Facilities', location: { lat: 40.7128, lng: -74.006, address: 'Conference Room A' } },
-  ]);
+    ]);
+    console.log('✓ Seeded: services');
+  }
 
-  await Location.insertMany([
-    { employeeId: ids[3], employeeName: 'Mike Employee', latitude: 40.7128, longitude: -74.006, address: 'Office Main Building', isActive: true },
-    { employeeId: ids[4], employeeName: 'Jane Developer', latitude: 40.726, longitude: -73.9897, address: 'Client Site - Manhattan Office', isActive: true },
-    { employeeId: ids[3], employeeName: 'Mike Employee', latitude: 40.7589, longitude: -73.9851, address: 'Field Location - Times Square', isActive: false },
-  ]);
+  // Seed Notifications if empty
+  if (await Notification.countDocuments() === 0) {
+    await Notification.insertMany([
+      { title: 'New Service Assigned', message: 'You have been assigned a new service: Fix Network Issue', type: 'service', isRead: false, actionUrl: '/services/1' },
+      { title: 'Attendance Reminder', message: "Don't forget to check in today", type: 'attendance', isRead: false, actionUrl: '/attendance' },
+    ]);
+    console.log('✓ Seeded: notifications');
+  }
 
-  await Notification.insertMany([
-    { title: 'New Service Assigned', message: 'You have been assigned a new service: Fix Network Issue', type: 'service', isRead: false, actionUrl: '/services/1' },
-    { title: 'Attendance Reminder', message: "Don't forget to check in today", type: 'attendance', isRead: false, actionUrl: '/attendance' },
-    { title: 'Service Completed', message: 'Service "Office Maintenance" has been marked as completed', type: 'service', isRead: true, actionUrl: '/services/3' },
-  ]);
+  // Seed Leaves if empty
+  const Leave = (await import('./models/Leave.js')).default;
+  if (await Leave.countDocuments() === 0 && ids[3]) {
+    await Leave.insertMany([
+      { employeeId: ids[3], employeeName: 'Mike Employee', leaveType: 'annual', startDate: '2024-02-01', endDate: '2024-02-05', reason: 'Family vacation', days: 5, status: 'approved', department: 'Sales' },
+      { employeeId: ids[4], employeeName: 'Jane Developer', leaveType: 'sick', startDate: '2024-01-20', endDate: '2024-01-21', reason: 'Flu', days: 2, status: 'pending', department: 'IT' }
+    ]);
+    console.log('✓ Seeded: leaves');
+  }
 
-  console.log('✓ Seeded: employees, attendance, services, locations, notifications');
+
+
+  // Seed Expenses if empty
+  const Expense = (await import('./models/Expense.js')).default;
+  if (await Expense.countDocuments() === 0 && ids[3]) {
+    await Expense.insertMany([
+      { employeeId: ids[3], employeeName: 'Mike Employee', title: 'Client Lunch', amount: 50, category: 'Food', status: 'pending', description: 'Lunch with potential client' },
+      { employeeId: ids[4], employeeName: 'Jane Developer', title: 'Software License', amount: 120, category: 'Software', status: 'approved', description: 'IDE subscription' }
+    ]);
+    console.log('✓ Seeded: expenses');
+  }
+
+  // Seed System Settings if empty
+  const SystemSettings = (await import('./models/SystemSettings.js')).default;
+  if (await SystemSettings.countDocuments() === 0) {
+    await SystemSettings.create({
+      companyName: 'Antigravity Tech',
+      currentFinancialYear: '2023-2024',
+      workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+      workingHours: { start: '09:00', end: '18:00' },
+      leaveTypes: [{ name: 'Annual', quota: 20 }, { name: 'Sick', quota: 10 }]
+    });
+    console.log('✓ Seeded: systemsettings');
+  }
+
+  // Seed User Settings if empty
+  const UserSettings = (await import('./models/UserSettings.js')).default;
+  if (await UserSettings.countDocuments() === 0 && ids[1]) {
+    await UserSettings.insertMany([
+      { userId: ids[1], theme: 'light', notifications: { email: true, push: true } },
+      { userId: ids[3], theme: 'light', notifications: { email: true, push: false } }
+    ]);
+    console.log('✓ Seeded: usersettings');
+  }
+
+  // Seed Payroll if empty
+  const Payroll = (await import('./models/Payroll.js')).default;
+  if (await Payroll.countDocuments() === 0 && ids[3]) {
+    await Payroll.insertMany([
+      { employeeId: ids[3], employeeName: 'Mike Employee', month: 1, year: 2024, baseSalary: 3000, netSalary: 2800, status: 'paid' },
+      { employeeId: ids[4], employeeName: 'Jane Developer', month: 1, year: 2024, baseSalary: 4500, netSalary: 4200, status: 'draft' }
+
+    ]);
+    console.log('✓ Seeded: payroll');
+  }
+
+  // Seed Tickets if empty
+  const Ticket = (await import('./models/Ticket.js')).default;
+  if (await Ticket.countDocuments() === 0 && ids[3]) {
+    await Ticket.insertMany([
+      { employeeId: ids[3], employeeName: 'Mike Employee', subject: 'Email Issue', description: 'Cannot access outlook', priority: 'high', status: 'open' },
+      { employeeId: ids[3], employeeName: 'Mike Employee', subject: 'Keyboard Replacement', description: 'Keys are sticky', priority: 'low', status: 'closed' }
+    ]);
+    console.log('✓ Seeded: tickets');
+  }
+
+  console.log('✓ Full Database Connectivity Check & Seeding Complete.');
 };
 
 // Seed users collection for login (admin, hr, employees) with password
@@ -160,6 +248,23 @@ const seedUsers = async () => {
   }
   console.log('✓ Seeded users (admin, hr, employees) with hashed passwords');
 };
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('\n!!! GLOBAL SERVER ERROR !!!');
+  console.error('Path:', req.path);
+  console.error('Method:', req.method);
+  console.error('Message:', err.message);
+  console.error('Stack:', err.stack);
+  console.error('Body:', req.body);
+  console.error('!!! END GLOBAL ERROR !!!\n');
+  
+  res.status(500).json({ 
+    message: 'Internal Server Error', 
+    error: err.message,
+    path: req.path
+  });
+});
 
 const startServer = async () => {
   try {

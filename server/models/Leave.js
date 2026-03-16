@@ -14,16 +14,24 @@ const leaveSchema = new mongoose.Schema(
         leaveType: {
             type: String,
             required: [true, 'Leave type is required'],
-            enum: ['sick', 'casual', 'vacation', 'other'],
+            enum: ['annual', 'sick', 'personal', 'permission', 'maternity', 'paternity', 'emergency', 'bereavement', 'compensatory', 'casual', 'vacation', 'other'],
         },
         startDate: {
-            type: Date,
+            type: String, // Keep as string for better frontend compatibility or Date
             required: [true, 'Start date is required'],
         },
         endDate: {
-            type: Date,
+            type: String,
             required: [true, 'End date is required'],
         },
+        startTime: String,
+        endTime: String,
+        days: {
+            type: Number,
+            default: 1
+        },
+        emergencyContact: String,
+        department: String,
         reason: {
             type: String,
             required: [true, 'Reason is required'],
@@ -31,7 +39,7 @@ const leaveSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'approved', 'rejected'],
+            enum: ['pending', 'approved', 'rejected', 'cancelled'],
             default: 'pending',
         },
         approvedBy: {

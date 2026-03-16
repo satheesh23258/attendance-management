@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -79,6 +79,7 @@ export const employeeAPI = {
   submitExpense: (formData) => api.post('/employees/expenses', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  getPayslip: (id, month) => api.get(`/employees/${id}/payroll/${month}/payslip`, { responseType: 'blob' }),
 }
 
 // Attendance API
@@ -86,6 +87,7 @@ export const attendanceAPI = {
   checkIn: (data) => api.post('/attendance/check-in', data),
   checkOut: (data) => api.post('/attendance/check-out', data),
   getTodayAttendance: () => api.get('/attendance/today'),
+  getMyTodayAttendance: () => api.get('/attendance/my-today'),
   getMyHistory: (params) => api.get('/attendance/my-history', { params }),
   getAttendanceHistory: (params) => api.get('/attendance/history', { params }),
   getMonthlyReport: (params) => api.get('/attendance/monthly-report', { params }),
@@ -119,6 +121,7 @@ export const serviceAPI = {
 // Notification API
 export const notificationAPI = {
   getAll: (params) => api.get('/notifications', { params }),
+  create: (data) => api.post('/notifications', data),
   markAsRead: (id) => api.patch(`/notifications/${id}/read`),
   markAllAsRead: () => api.patch('/notifications/read-all'),
   getUnreadCount: (params) => api.get('/notifications/unread-count', { params }),
@@ -127,13 +130,9 @@ export const notificationAPI = {
 
 // Reports API
 export const reportsAPI = {
-  getAttendanceReport: (params) => api.get('/reports/attendance', { params }),
-  getServiceReport: (params) => api.get('/reports/services', { params }),
-  getEmployeePerformance: (params) => api.get('/reports/performance', { params }),
-  exportReport: (type, params) => api.get(`/reports/export/${type}`, {
-    params,
-    responseType: 'blob'
-  }),
+  exportAttendance: (params) => api.get('/reports/attendance', { params, responseType: 'blob' }),
+  exportEmployees: () => api.get('/reports/employees', { responseType: 'blob' }),
+  exportPayroll: (params) => api.get('/reports/payroll', { params, responseType: 'blob' }),
 }
 
 // Leave API
@@ -160,11 +159,7 @@ export const expenseAPI = {
   updateStatus: (id, data) => api.patch(`/expenses/status/${id}`, data),
 }
 
-// Audit API
-export const auditAPI = {
-  getLogs: (params) => api.get('/audit', { params }),
-  getStats: () => api.get('/audit/stats'),
-}
+
 
 // Payroll API
 export const payrollAPI = {
@@ -190,12 +185,12 @@ export const ticketAPI = {
   update: (id, data) => api.patch(`/tickets/${id}`, data),
 }
 
-// Asset API
-export const assetAPI = {
-  getAll: (params) => api.get('/assets/all', { params }),
-  getMyAssets: () => api.get('/assets/my'),
-  add: (data) => api.post('/assets/add', data),
-  update: (id, data) => api.patch(`/assets/${id}`, data),
+// Hybrid Permission API
+export const hybridPermissionAPI = {
+  getAll: () => api.get('/hybrid-permissions/all'),
+  grant: (data) => api.post('/hybrid-permissions/grant', data),
+  revoke: (id) => api.patch(`/hybrid-permissions/revoke/${id}`),
+  myPermission: () => api.get('/hybrid-permissions/my-permission'),
 }
 
 export default api

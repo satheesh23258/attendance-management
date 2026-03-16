@@ -76,7 +76,7 @@ const Login = () => {
       return
     }
 
-    const result = await login(formData)
+    const result = await login(formData, 'employee')
     if (result.success) {
       // Redirect based on user role
       const user = JSON.parse(atob(localStorage.getItem('token').split('.')[1]))

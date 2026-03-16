@@ -35,18 +35,22 @@ import {
   CloudUpload,
   AccountBalanceWallet,
   TrendingDown,
-  Info
+  Info,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { expenseAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
 
 const MyExpenses = () => {
+  const navigate = useNavigate();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -122,6 +126,55 @@ const MyExpenses = () => {
 
   return (
     <DashboardLayout title="My Expense Claims">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              My Expense Claims
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Submit and track your business expense reimbursements
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            onClick={fetchExpenses}
+            startIcon={<Refresh />}
+            sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: 2, textTransform: 'none', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => setOpenDialog(true)}
+            startIcon={<Add />}
+            sx={{ bgcolor: 'white', color: '#00c853', borderRadius: 2, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#f5f5f5' } }}
+          >
+            New Claim
+          </Button>
+        </Box>
+      </Box>
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
@@ -134,7 +187,7 @@ const MyExpenses = () => {
                 <Typography color="textSecondary" variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
                   Total Claimed
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800 }}>${totals.total.toLocaleString()}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>₹{totals.total.toLocaleString()}</Typography>
               </Box>
             </CardContent>
           </Card>
@@ -149,7 +202,7 @@ const MyExpenses = () => {
                 <Typography color="textSecondary" variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
                   Total Approved
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: '#00c853' }}>${totals.approved.toLocaleString()}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#00c853' }}>₹{totals.approved.toLocaleString()}</Typography>
               </Box>
             </CardContent>
           </Card>
@@ -164,7 +217,7 @@ const MyExpenses = () => {
                 <Typography color="textSecondary" variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
                   Pending Claims
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: '#ff9800' }}>${totals.pending.toLocaleString()}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#ff9800' }}>₹{totals.pending.toLocaleString()}</Typography>
               </Box>
             </CardContent>
           </Card>
@@ -179,10 +232,10 @@ const MyExpenses = () => {
             variant="contained"
             startIcon={<Add />}
             onClick={() => setOpenDialog(true)}
-            sx={{ 
-              borderRadius: 3, 
-              bgcolor: '#000', 
-              '&:hover': { bgcolor: '#222' },
+            sx={{
+              borderRadius: 3,
+              bgcolor: '#00c853',
+              '&:hover': { bgcolor: '#00a444' },
               textTransform: 'none',
               px: 3
             }}
@@ -226,11 +279,11 @@ const MyExpenses = () => {
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{expense.title}</Typography>
                         <Chip label={expense.category} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>${expense.amount.toLocaleString()}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>₹{expense.amount.toLocaleString()}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={expense.status.toUpperCase()} 
-                          size="small" 
+                        <Chip
+                          label={expense.status.toUpperCase()}
+                          size="small"
                           color={getStatusColor(expense.status)}
                           sx={{ fontWeight: 700, fontSize: '0.65rem' }}
                         />
@@ -263,40 +316,40 @@ const MyExpenses = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField 
-                fullWidth label="Expense Title" name="title" value={formData.title} onChange={handleInputChange} required 
+              <TextField
+                fullWidth label="Expense Title" name="title" value={formData.title} onChange={handleInputChange} required
                 variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField 
-                fullWidth label="Amount ($)" name="amount" type="number" value={formData.amount} onChange={handleInputChange} required 
+              <TextField
+                fullWidth label="Amount (₹)" name="amount" type="number" value={formData.amount} onChange={handleInputChange} required
                 variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
             </Grid>
             <Grid item xs={6}>
-              <TextField 
-                fullWidth select label="Category" name="category" value={formData.category} onChange={handleInputChange} 
+              <TextField
+                fullWidth select label="Category" name="category" value={formData.category} onChange={handleInputChange}
                 variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               >
                 {categories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
               </TextField>
             </Grid>
             <Grid item xs={12}>
-              <TextField 
-                fullWidth type="date" label="Expense Date" name="date" value={formData.date} onChange={handleInputChange} required 
+              <TextField
+                fullWidth type="date" label="Expense Date" name="date" value={formData.date} onChange={handleInputChange} required
                 InputLabelProps={{ shrink: true }} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField 
-                fullWidth label="Receipt URL (Image/PDF)" name="receiptUrl" value={formData.receiptUrl} onChange={handleInputChange} 
+              <TextField
+                fullWidth label="Receipt URL (Image/PDF)" name="receiptUrl" value={formData.receiptUrl} onChange={handleInputChange}
                 placeholder="https://..." variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                 InputProps={{ startAdornment: <CloudUpload sx={{ mr: 1, color: 'text.secondary' }} /> }}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField 
+              <TextField
                 fullWidth label="Optional Remarks" name="remark" value={formData.remark} onChange={handleInputChange} multiline rows={3}
                 variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
               />
@@ -305,11 +358,11 @@ const MyExpenses = () => {
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setOpenDialog(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            onClick={handleSubmit} 
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
             disabled={submitting}
-            sx={{ bgcolor: '#000', borderRadius: 3, px: 4, textTransform: 'none', '&:hover': { bgcolor: '#222' } }}
+            sx={{ bgcolor: '#00c853', borderRadius: 3, px: 4, textTransform: 'none', '&:hover': { bgcolor: '#00a444' } }}
           >
             {submitting ? 'Submitting...' : 'Submit Claim'}
           </Button>

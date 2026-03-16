@@ -122,6 +122,7 @@ const AdminServiceManagement = () => {
             await serviceAPI.delete(serviceToDelete.id || serviceToDelete._id)
             setServices(prev => prev.filter(s => (s.id || s._id) !== (serviceToDelete.id || serviceToDelete._id)))
             setDeleteDialogOpen(false)
+            setServiceToDelete(null)
             toast.success('Service deleted successfully')
         } catch (error) {
             toast.error('Delete failed')
@@ -129,14 +130,21 @@ const AdminServiceManagement = () => {
     }
 
     const handleAssignConfirm = async () => {
+        if (!selectedService) {
+            toast.error('No service selected')
+            return
+        }
         try {
-            await serviceAPI.assignService(selectedService.id || selectedService._id, { employeeId: selectedEmployeeId })
+            const response = await serviceAPI.assignService(selectedService.id || selectedService._id, { employeeId: selectedEmployeeId })
+            const updatedService = response.data
             setServices(prev => prev.map(s =>
-                (s.id || s._id) === (selectedService.id || selectedService._id) ? { ...s, assignedTo: selectedEmployeeId } : s
+                (s.id || s._id) === (selectedService.id || selectedService._id) ? updatedService : s
             ))
             setAssignDialogOpen(false)
+            setSelectedService(null)
             toast.success('Service assigned')
         } catch (error) {
+            console.error('Assignment error:', error)
             toast.error('Assignment failed')
         }
     }
@@ -159,7 +167,17 @@ const AdminServiceManagement = () => {
         }
     }
 
-    const getEmployee = (id) => employees.find(e => e.id === id || e._id === id)
+    const getEmployee = (idOrObj) => {
+        if (!idOrObj) return null
+        if (typeof idOrObj === 'object' && idOrObj !== null) {
+            // Check if it's a fully populated object (has name) or just a mongo object with id
+            if (idOrObj.name) return idOrObj;
+            // If it's just an object with an id field, try to find it in employees list
+            const id = idOrObj.id || idOrObj._id || idOrObj.$oid;
+            return employees.find(e => e.id === id || e._id === id);
+        }
+        return employees.find(e => e.id === idOrObj || e._id === idOrObj)
+    }
 
     const handleMenuClick = (event, service) => {
         setAnchorEl(event.currentTarget)
@@ -168,7 +186,7 @@ const AdminServiceManagement = () => {
 
     const handleMenuClose = () => {
         setAnchorEl(null)
-        setSelectedService(null)
+        // Don't clear selectedService here as it may be needed by dialogs
     }
 
     const stats = {
@@ -182,7 +200,7 @@ const AdminServiceManagement = () => {
         <DashboardLayout title="Admin Service Management">
             {/* Header */}
             <Box sx={{
-                background: '#000000',
+                background: '#00c853',
                 color: 'white',
                 p: 3,
                 display: 'flex',
@@ -412,7 +430,13 @@ const AdminServiceManagement = () => {
                 <MenuItem onClick={() => { handleEditService(selectedService); handleMenuClose(); }}>
                     <Edit sx={{ mr: 1, fontSize: 18 }} /> Edit Case
                 </MenuItem>
-                <MenuItem onClick={() => { setSelectedEmployeeId(selectedService?.assignedTo || ''); setAssignDialogOpen(true); handleMenuClose(); }}>
+                <MenuItem onClick={() => { 
+                    const currentAssigned = selectedService?.assignedTo;
+                    const id = (currentAssigned && typeof currentAssigned === 'object') ? (currentAssigned.id || currentAssigned._id) : currentAssigned;
+                    setSelectedEmployeeId(id || ''); 
+                    setAssignDialogOpen(true); 
+                    handleMenuClose(); 
+                }}>
                     <Groups sx={{ mr: 1, fontSize: 18 }} /> Reassign Task
                 </MenuItem>
                 <Divider />
@@ -422,7 +446,7 @@ const AdminServiceManagement = () => {
             </Menu>
 
             {/* Assign Dialog */}
-            <Dialog open={assignDialogOpen} onClose={() => setAssignDialogOpen(false)} maxWidth="xs" fullWidth>
+            <Dialog open={assignDialogOpen} onClose={() => { setAssignDialogOpen(false); setSelectedService(null); }} maxWidth="xs" fullWidth>
                 <DialogTitle>Assign Service Request</DialogTitle>
                 <DialogContent>
                     <Box sx={{ mt: 1 }}>
@@ -451,7 +475,7 @@ const AdminServiceManagement = () => {
             </Dialog>
 
             {/* Delete Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <Dialog open={deleteDialogOpen} onClose={() => { setDeleteDialogOpen(false); setServiceToDelete(null); }}>
                 <DialogTitle>Confirm Deletion</DialogTitle>
                 <DialogContent>
                     <Typography>Are you sure you want to delete this service case? This action cannot be undone and will remove all associated logs.</Typography>

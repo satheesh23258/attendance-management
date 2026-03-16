@@ -8,6 +8,8 @@ import TempOtp from '../models/TempOtp.js';
 import { generateOtp, hashOtp, verifyOtpHash } from '../utils/otp.js';
 import { sendSms, sendEmail } from '../utils/smsService.js';
 import Notification from '../models/Notification.js';
+import { auth } from '../middleware/auth.js';
+
 
 const router = express.Router();
 const getJwtSecret = () => process.env.VITE_JWT_SECRET || process.env.JWT_SECRET || 'demo-secret-key';
@@ -20,29 +22,29 @@ const otpRequestLimiter = (req, res, next) => {
   const { phone, email, identifier, type } = req.body;
   const reqPhone = phone || (type === 'phone' ? identifier : null);
   const reqEmail = email || (type === 'email' ? identifier : null);
-  
+
   const id = reqPhone ? `phone:${reqPhone}` : reqEmail ? `email:${reqEmail.toLowerCase()}` : null;
-  
+
   if (!id) {
     return res.status(400).json({ message: 'Phone or email required' });
   }
-  
+
   const now = Date.now();
   const window = 60 * 60 * 1000; // 1 hour window
   const maxAttempts = 3; // Max 3 OTP requests per hour
-  
+
   if (!otpAttempts.has(id)) {
     otpAttempts.set(id, []);
   }
-  
+
   const attempts = otpAttempts.get(id).filter(time => now - time < window);
-  
+
   if (attempts.length >= maxAttempts) {
-    return res.status(429).json({ 
-      message: `Too many OTP requests. Please try again after ${Math.ceil((attempts[0] + window - now) / 60000)} minutes.` 
+    return res.status(429).json({
+      message: `Too many OTP requests. Please try again after ${Math.ceil((attempts[0] + window - now) / 60000)} minutes.`
     });
   }
-  
+
   attempts.push(now);
   otpAttempts.set(id, attempts);
   next();
@@ -51,33 +53,33 @@ const otpRequestLimiter = (req, res, next) => {
 // Middleware to rate-limit OTP verify attempts per phone/email
 const otpVerifyLimiter = (req, res, next) => {
   const { phone, email, identifier } = req.body;
-  
+
   // identifier could be passed directly from new registration flow
-  const reqPhone = phone || (identifier && identifier.match(/^[0-9+]+$/) ? identifier : null);
+  const reqPhone = phone || (identifier && identifier.match(/^[0-9+ ]+$/) ? identifier : null);
   const reqEmail = email || (identifier && identifier.includes('@') ? identifier : null);
-  
-  const id = reqPhone ? `verify:${reqPhone}` : reqEmail ? `verify:${reqEmail.toLowerCase()}` : null;
-  
+
+  const id = reqPhone ? `verify:${reqPhone.trim()}` : reqEmail ? `verify:${reqEmail.toLowerCase().trim()}` : null;
+
   if (!id) {
-    return res.status(400).json({ message: 'Phone or email required' });
+    return res.status(400).json({ message: 'Phone or email required for verification tracking' });
   }
-  
+
   const now = Date.now();
   const window = 15 * 60 * 1000; // 15 minute window
   const maxAttempts = 5; // Max 5 verify attempts per 15 min
-  
+
   if (!otpAttempts.has(id)) {
     otpAttempts.set(id, []);
   }
-  
+
   const attempts = otpAttempts.get(id).filter(time => now - time < window);
-  
+
   if (attempts.length >= maxAttempts) {
-    return res.status(429).json({ 
-      message: `Too many OTP verification attempts. Please try again after ${Math.ceil((attempts[0] + window - now) / 60000)} minutes.` 
+    return res.status(429).json({
+      message: `Too many OTP verification attempts. Please try again after ${Math.ceil((attempts[0] + window - now) / 60000)} minutes.`
     });
   }
-  
+
   attempts.push(now);
   otpAttempts.set(id, attempts);
   next();
@@ -115,7 +117,7 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const empId = employeeId || `EMP${Date.now().toString().slice(-5)}`;
-    
+
     // Admin approval logic
     const isNewAdmin = role === 'admin';
     const status = isNewAdmin ? 'pending' : 'active';
@@ -166,8 +168,8 @@ router.post('/register', async (req, res) => {
       const adminEmails = activeAdmins.map(a => a.email).join(', ');
       if (adminEmails) {
         await sendEmail(
-          adminEmails, 
-          'Action Required: New Admin Registration Pending Approval', 
+          adminEmails,
+          'Action Required: New Admin Registration Pending Approval',
           `A new user (${name}, ${email}) has registered as an Admin. Please log in to approve their account.`
         );
       }
@@ -226,7 +228,7 @@ router.post('/send-verification-otp', otpRequestLimiter, async (req, res) => {
   try {
     const { identifier, type } = req.body; // type: 'email' or 'phone'
     if (!identifier || !type) return res.status(400).json({ message: 'identifier and type required' });
-    
+
     // If phone, ensure no user has it, or email ensuring no user has it
     if (type === 'phone') {
       const user = await User.findOne({ phone: identifier.trim() });
@@ -254,27 +256,32 @@ router.post('/send-verification-otp', otpRequestLimiter, async (req, res) => {
     if (type === 'phone') {
       await sendSms(identifier.trim(), `Your verification code is: ${otp}`);
     } else {
-      await sendEmail(identifier.toLowerCase().trim(), 'Your Verification Code', `Your OTP: ${otp}`);
+      const result = await sendEmail(identifier.toLowerCase().trim(), 'Your Verification Code', `Your OTP: ${otp}`);
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to send verification email');
+      }
     }
 
     res.json({ message: 'Verification OTP sent' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to send OTP' });
+    console.error('OTP Route Error:', err);
+    res.status(500).json({ message: err.message || 'Failed to send OTP' });
   }
 });
 
 // POST /api/auth/verify-otp
 router.post('/verify-otp', otpVerifyLimiter, async (req, res) => {
   try {
-    const { userId, otp, purpose, phone, email, identifier } = req.body
-    if (!otp) return res.status(400).json({ message: 'OTP is required' })
-
+    const { userId, otp, purpose, phone, email, identifier } = req.body;
+    if (!otp) return res.status(400).json({ message: 'OTP is required' });
     // If identifier is passed (from new frontend signup workflow)
     if (identifier) {
-      const tempEntry = await TempOtp.findOne({ 
-        identifier: identifier.toLowerCase().trim(),
-        purpose 
+      // Use original casing if it's a phone, otherwise use lower (consistent with generation)
+      const searchId = purpose === 'verify_phone' ? identifier.trim() : identifier.toLowerCase().trim();
+      
+      const tempEntry = await TempOtp.findOne({
+        identifier: searchId,
+        purpose
       });
       if (!tempEntry) return res.status(404).json({ message: 'OTP not requested or expired' });
       if (new Date() > tempEntry.expires) return res.status(400).json({ message: 'OTP expired' });
@@ -360,14 +367,28 @@ router.post('/reset-password', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, requiredRole } = req.body;
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
     if (!user) {
+      // Return specific error if role was intended
+      if (requiredRole) {
+        return res.status(404).json({ message: `${requiredRole.toUpperCase()} account not found.` });
+      }
       return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Role check if requiredRole is provided
+    if (requiredRole) {
+      const isPrimaryRole = user.role === requiredRole;
+      const hasHybridRole = user.hybridPermissions && user.hybridPermissions.roles?.includes(requiredRole);
+
+      if (!isPrimaryRole && !hasHybridRole) {
+        return res.status(404).json({ message: `${requiredRole.toUpperCase()} account not found.` });
+      }
     }
 
     // Check password: either hashed (bcrypt) or plain (legacy demo users)
@@ -398,11 +419,15 @@ router.post('/login', async (req, res) => {
     delete userResponse.password;
     delete userResponse.__v;
 
+    const employee = await Employee.findOne({ email: user.email });
+
     res.json({
       token,
       user: {
         id: user._id.toString(),
         ...userResponse,
+        employeeId: employee ? employee._id.toString() : null,
+        employeeUid: employee ? employee.employeeId : null,
       },
     });
   } catch (error) {
@@ -429,12 +454,59 @@ router.get('/me', async (req, res) => {
     const userResponse = user.toJSON ? user.toJSON() : user.toObject();
     delete userResponse.__v;
 
+    const employee = await Employee.findOne({ email: user.email });
+
     res.json({
       id: user._id.toString(),
       ...userResponse,
+      employeeId: employee ? employee._id.toString() : null,
+      employeeUid: employee ? employee.employeeId : null,
     });
   } catch (error) {
     res.status(401).json({ message: 'Invalid or expired token' });
+  }
+});
+
+// PUT /api/auth/profile - update profile
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { name, phone, department, branchName } = req.body;
+
+    // Update User
+    const user = req.user;
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (department) user.department = department;
+    if (branchName !== undefined) user.branchName = branchName;
+
+    await user.save();
+
+    // Sync with Employee collection
+    const employee = await Employee.findOneAndUpdate(
+      { email: user.email },
+      {
+        $set: {
+          name: user.name,
+          phone: user.phone,
+          department: user.department,
+          branchName: user.branchName
+        }
+      },
+      { new: true, runValidators: true }
+    );
+
+    const userResponse = user.toJSON ? user.toJSON() : user.toObject();
+    delete userResponse.password;
+
+    res.json({
+      ...userResponse,
+      employeeDetails: employee
+    });
+  } catch (error) {
+    console.error('Profile Update Error:', error);
+    res.status(500).json({ message: error.message || 'Failed to update profile' });
   }
 });
 

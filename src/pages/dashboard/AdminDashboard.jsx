@@ -11,6 +11,7 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
+  ListItemIcon,
   Chip,
   LinearProgress,
   Button,
@@ -19,7 +20,8 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  IconButton
 } from '@mui/material'
 import {
   People,
@@ -29,14 +31,18 @@ import {
   AccessTime,
   CheckCircle,
   Pending,
-  Error
+  Error,
+  Schedule,
+  Warning,
+  Notifications,
+  ArrowBack
 } from '@mui/icons-material'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import DashboardLayout from '../../components/DashboardLayout'
-import { employeeAPI, attendanceAPI, userAPI } from '../../services/api'
+import { employeeAPI, attendanceAPI, userAPI, notificationAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 
 const AdminDashboard = () => {
@@ -53,6 +59,7 @@ const AdminDashboard = () => {
   const [attendanceData, setAttendanceData] = useState([])
   const [employees, setEmployees] = useState([])
   const [pendingAdmins, setPendingAdmins] = useState([])
+  const [notifications, setNotifications] = useState([])
 
   useEffect(() => {
     // Initialize with default values first
@@ -106,20 +113,51 @@ const AdminDashboard = () => {
         } catch (err) {
           console.warn('Failed to fetch pending admins', err.message);
         }
+
+        // Fetch services
+        try {
+          const servicesRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/services`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          const services = servicesRes.data || [];
+          setStats(prev => ({
+            ...prev,
+            activeServices: services.filter(s => s.status === 'active').length
+          }));
+        } catch (err) {
+          console.warn('Failed to fetch services:', err.message);
+        }
+
+        // Fetch live locations
+        try {
+          const locationsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/location/live`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          setStats(prev => ({
+            ...prev,
+            liveLocations: (locationsRes.data || []).length
+          }));
+        } catch (err) {
+          console.warn('Failed to fetch live locations:', err.message);
+        }
+
+        // Fetch notifications
+        try {
+          const notifRes = await notificationAPI.getAll()
+          setNotifications(notifRes.data?.data || notifRes.data || [])
+        } catch (err) {
+          console.warn('Failed to fetch notifications:', err.message)
+        }
       } catch (error) {
         console.warn('Failed to load dashboard data:', error.message)
         // Continue with empty data - don't break the page
       }
     }
 
-    // Create mock monthly attendance data (always available)
+    // Monthly attendance data (can be derived from database in a real scenario)
     setAttendanceData([
-      { month: 'January', present: 20, absent: 2 },
-      { month: 'February', present: 22, absent: 0 },
-      { month: 'March', present: 18, absent: 4 },
-      { month: 'April', present: 21, absent: 1 },
-      { month: 'May', present: 19, absent: 3 },
-      { month: 'June', present: 22, absent: 0 }
+      { month: 'Last Month', present: stats.totalEmployees * 20, absent: stats.totalEmployees * 2 },
+      { month: 'Current Month', present: stats.presentToday, absent: stats.totalEmployees - stats.presentToday }
     ])
 
     loadDashboardData()
@@ -183,7 +221,7 @@ const AdminDashboard = () => {
 
   const handleRejectAdmin = async (id) => {
     try {
-      if(window.confirm('Are you sure you want to reject this request?')) {
+      if (window.confirm('Are you sure you want to reject this request?')) {
         await userAPI.rejectAdmin(id);
         toast.success('Admin request rejected');
         setPendingAdmins(prev => prev.filter(admin => admin.id !== id && admin._id !== id));
@@ -195,35 +233,63 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout title="Admin Dashboard">
-      {/* Clear Kongu-Style Header */}
-      <Paper elevation={0} sx={{
-        mb: 4,
-        borderRadius: 2,
-        bgcolor: '#ffffff',
-        border: '1px solid #e0e0e0',
-        overflow: 'hidden'
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
-        <Box sx={{ display: 'flex', borderBottom: '1px solid #e0e0e0', bgcolor: '#f8f9fa' }}>
-          <Box sx={{ 
-            px: 4, 
-            py: 2, 
-            borderBottom: '2px solid #00c853',
-            color: '#00c853',
-            fontWeight: 'bold',
-            mb: '-1px',
-            fontSize: '15px'
-          }}>
-            Dashboard / Overview
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Admin Dashboard
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Full system control and administrative overview
+            </Typography>
           </Box>
         </Box>
-        <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ color: '#555' }}>
-            <strong>System Role:</strong> ADMINISTRATOR ACCESS, <strong>Status:</strong> Active Session
-          </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+           <Button
+             variant="contained"
+             color="inherit"
+             startIcon={<AccessTime />}
+             onClick={() => navigate('/hr/attendance-management')}
+             sx={{ 
+               bgcolor: 'white', 
+               color: '#00c853', 
+               fontWeight: 'bold',
+               '&:hover': { bgcolor: '#f5f5f5' }
+             }}
+           >
+             Manage Attendance
+           </Button>
+           <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 600 }}>
+                 System Role: ADMINISTRATOR ACCESS
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                 Status: Active Session
+              </Typography>
+           </Box>
         </Box>
-      </Paper>
+      </Box>
 
-      
+
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -303,18 +369,18 @@ const AdminDashboard = () => {
                           <TableCell>{admin.phone}</TableCell>
                           <TableCell>{admin.department}</TableCell>
                           <TableCell align="right">
-                            <Button 
-                              variant="contained" 
-                              color="success" 
-                              size="small" 
+                            <Button
+                              variant="contained"
+                              color="success"
+                              size="small"
                               sx={{ mr: 1, textTransform: 'none' }}
                               onClick={() => handleApproveAdmin(admin._id || admin.id)}
                             >
                               Approve
                             </Button>
-                            <Button 
-                              variant="outlined" 
-                              color="error" 
+                            <Button
+                              variant="outlined"
+                              color="error"
                               size="small"
                               sx={{ textTransform: 'none' }}
                               onClick={() => handleRejectAdmin(admin._id || admin.id)}
@@ -429,78 +495,6 @@ const AdminDashboard = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Service Statistics Table */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Card elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Service Priority Distribution
-              </Typography>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Priority</TableCell>
-                      <TableCell>Count</TableCell>
-                      <TableCell>Percentage</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>
-                        <Chip label="High" color="error" size="small" />
-                      </TableCell>
-                      <TableCell>12</TableCell>
-                      <TableCell>40%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>
-                        <Chip label="Medium" color="warning" size="small" />
-                      </TableCell>
-                      <TableCell>10</TableCell>
-                      <TableCell>33%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>
-                        <Chip label="Low" color="success" size="small" />
-                      </TableCell>
-                      <TableCell>8</TableCell>
-                      <TableCell>27%</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Card elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Recent Activities
-              </Typography>
-              <List>
-                {recentActivities.map((activity, index) => (
-                  <ListItem key={index} alignItems="flex-start">
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: '#00c853', color: '#ffffff' }}>
-                        {activity.icon}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={activity.title}
-                      secondary={activity.time}
-                    />
-                  </ListItem>
-                ))}
-              </List>
             </CardContent>
           </Card>
         </Grid>

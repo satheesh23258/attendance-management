@@ -32,8 +32,11 @@ import {
   FilterList,
   PendingActions,
   AssignmentTurnedIn,
-  ReportProblem
+  ReportProblem,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { expenseAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
@@ -46,6 +49,7 @@ const ClaimApprovals = () => {
   const [reviewDialog, setReviewDialog] = useState(false);
   const [reviewData, setReviewData] = useState({ status: '', remark: '' });
   const [processing, setProcessing] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchClaims();
@@ -84,7 +88,7 @@ const ClaimApprovals = () => {
     }
   };
 
-  const filteredClaims = claims.filter(c => 
+  const filteredClaims = claims.filter(c =>
     c.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -97,6 +101,43 @@ const ClaimApprovals = () => {
 
   return (
     <DashboardLayout title="Expense Claim Approvals">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Expense Claim Approvals
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Review and process employee expense claims
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchClaims} title="Refresh">
+            <Refresh />
+          </IconButton>
+        </Box>
+      </Box>
+
       {/* Mini Stats Bar */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
@@ -172,11 +213,11 @@ const ClaimApprovals = () => {
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>{claim.title}</Typography>
                       <Typography variant="caption" color="textSecondary">{claim.category} • {new Date(claim.date).toLocaleDateString()}</Typography>
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>${claim.amount.toLocaleString()}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>₹{claim.amount.toLocaleString()}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={claim.status.toUpperCase()} 
-                        size="small" 
+                      <Chip
+                        label={claim.status.toUpperCase()}
+                        size="small"
                         color={claim.status === 'approved' ? 'success' : claim.status === 'rejected' ? 'error' : 'warning'}
                         sx={{ fontWeight: 700, fontSize: '0.65rem' }}
                       />
@@ -184,11 +225,11 @@ const ClaimApprovals = () => {
                     <TableCell align="right">
                       {claim.status === 'pending' ? (
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                          <Button 
+                          <Button
                             variant="contained" size="small" color="success" onClick={() => handleOpenReview(claim, 'approved')}
                             sx={{ minWidth: 40, p: 0.5, borderRadius: 2 }}
                           ><Check fontSize="small" /></Button>
-                          <Button 
+                          <Button
                             variant="contained" size="small" color="error" onClick={() => handleOpenReview(claim, 'rejected')}
                             sx={{ minWidth: 40, p: 0.5, borderRadius: 2 }}
                           ><Close fontSize="small" /></Button>
@@ -212,7 +253,7 @@ const ClaimApprovals = () => {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Reviewing claim from <strong>{selectedClaim?.employeeName}</strong> for <strong>${selectedClaim?.amount}</strong>.
+            Reviewing claim from <strong>{selectedClaim?.employeeName}</strong> for <strong>₹{selectedClaim?.amount}</strong>.
           </Typography>
           <TextField
             fullWidth label="Decision Remark" multiline rows={3} value={reviewData.remark}
@@ -223,7 +264,7 @@ const ClaimApprovals = () => {
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setReviewDialog(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
-          <Button 
+          <Button
             variant="contained" onClick={handleSubmitReview} disabled={processing}
             color={reviewData.status === 'approved' ? 'success' : 'error'}
             sx={{ borderRadius: 3, px: 4, textTransform: 'none' }}

@@ -18,7 +18,8 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  IconButton
+  IconButton,
+  Paper
 } from '@mui/material'
 import {
   Person,
@@ -31,17 +32,21 @@ import {
   Cancel,
   Work,
   CalendarToday,
-  Badge
+  Badge,
+  Refresh
 } from '@mui/icons-material'
 
+import { useNavigate } from 'react-router-dom'
+import DashboardLayout from '../../components/DashboardLayout'
+
 const MyProfile = () => {
+  const navigate = useNavigate()
   const [profile, setProfile] = useState({
     id: 'EMP001',
     name: 'John Doe',
     email: 'john.doe@company.com',
     phone: '+1 (555) 123-4567',
     department: 'Engineering',
-    position: 'Senior Software Engineer',
     employeeId: 'EMP001',
     joinDate: '2022-01-15',
     manager: 'Jane Smith',
@@ -84,32 +89,48 @@ const MyProfile = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <Box sx={{ 
-        backgroundColor: '#00c853', 
-        color: 'white', 
-        p: 3, 
-        display: 'flex', 
+    <DashboardLayout title="My Profile">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit" onClick={handleBack}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h4">
-            My Profile
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              My Profile
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              View and manage your personal employee information
+            </Typography>
+          </Box>
         </Box>
-        <Button 
-          variant="outlined" 
-          color="inherit" 
-          startIcon={isEditing ? <Cancel /> : <Edit />}
-          onClick={isEditing ? handleCancel : handleEdit}
-        >
-          {isEditing ? 'Cancel' : 'Edit Profile'}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            color="inherit"
+            startIcon={isEditing ? <Cancel /> : <Edit />}
+            onClick={isEditing ? handleCancel : handleEdit}
+            sx={{ bgcolor: 'white', color: '#00c853', borderRadius: 2, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#f5f5f5' } }}
+          >
+            {isEditing ? 'Cancel' : 'Edit Profile'}
+          </Button>
+        </Box>
       </Box>
 
       {/* Main Content */}
@@ -133,9 +154,6 @@ const MyProfile = () => {
                 </Avatar>
                 <Typography variant="h5" gutterBottom>
                   {profile.name}
-                </Typography>
-                <Typography variant="body1" color="text.secondary" gutterBottom>
-                  {profile.position}
                 </Typography>
                 <Chip 
                   label={profile.status} 
@@ -208,16 +226,6 @@ const MyProfile = () => {
                   Work Information
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Position"
-                      value={isEditing ? editedProfile.position : profile.position}
-                      onChange={(e) => handleInputChange('position', e.target.value)}
-                      disabled={!isEditing}
-                      margin="normal"
-                    />
-                  </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -334,7 +342,7 @@ const MyProfile = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </DashboardLayout>
   )
 }
 

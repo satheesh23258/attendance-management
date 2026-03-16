@@ -55,7 +55,7 @@ const HRLogin = () => {
     setError('')
     setSuccess('')
 
-    const result = await login({ email: formData.email, password: formData.password })
+    const result = await login({ email: formData.email, password: formData.password }, 'hr')
     setLoading(false)
 
     if (!result.success) {
@@ -76,15 +76,15 @@ const HRLogin = () => {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       background: '#1B5E20',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
     }}>
       <Container maxWidth="sm">
-        <Card sx={{ 
+        <Card sx={{
           boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
           borderRadius: 3,
           overflow: 'hidden'
@@ -92,12 +92,12 @@ const HRLogin = () => {
           <CardContent sx={{ p: 4 }}>
             {/* Header */}
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar sx={{ 
-                bgcolor: '#000000', color: '#FFFFFF', 
-                width: 80, 
-                height: 80, 
-                mx: 'auto', 
-                mb: 2 
+              <Avatar sx={{
+                bgcolor: '#000000', color: '#FFFFFF',
+                width: 80,
+                height: 80,
+                mx: 'auto',
+                mb: 2
               }}>
                 <People sx={{ fontSize: 40 }} />
               </Avatar>
@@ -135,7 +135,7 @@ const HRLogin = () => {
                 required
                 sx={{ mb: 3 }}
                 placeholder="hr@company.com"
-              
+
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -144,7 +144,7 @@ const HRLogin = () => {
                   )
                 }}
               />
-              
+
               <TextField
                 fullWidth
                 label="Password"
@@ -155,7 +155,7 @@ const HRLogin = () => {
                 required
                 sx={{ mb: 1 }}
                 placeholder="Enter your password"
-              
+
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -171,7 +171,7 @@ const HRLogin = () => {
                   )
                 }}
               />
-              
+
               {/* Forgot Password Link */}
               <Box sx={{ textAlign: 'right', mb: 3 }}>
                 <Button
@@ -190,7 +190,7 @@ const HRLogin = () => {
                 variant="contained"
                 size="large"
                 disabled={loading}
-                sx={{ 
+                sx={{
                   bgcolor: '#000000', color: '#FFFFFF',
                   '&:hover': { bgcolor: '#000000' },
                   py: 1.5,
@@ -218,11 +218,11 @@ const HRLogin = () => {
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
                 Not HR?{' '}
-                <Button 
-                  href="/login/admin" 
+                <Button
+                  href="/login/admin"
                   variant="outlined"
-                  sx={{ 
-                    textTransform: 'none', 
+                  sx={{
+                    textTransform: 'none',
                     color: '#000000',
                     borderColor: '#1B5E20',
                     mx: 1,
@@ -232,11 +232,11 @@ const HRLogin = () => {
                   Admin Login
                 </Button>
                 {' | '}
-                <Button 
-                  href="/login/employee" 
+                <Button
+                  href="/login/employee"
                   variant="outlined"
-                  sx={{ 
-                    textTransform: 'none', 
+                  sx={{
+                    textTransform: 'none',
                     color: '#000000',
                     borderColor: '#1B5E20',
                     mx: 1,

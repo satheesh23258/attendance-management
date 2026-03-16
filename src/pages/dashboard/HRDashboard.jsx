@@ -11,6 +11,7 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
+  ListItemIcon,
   Chip,
   LinearProgress,
   Table,
@@ -18,7 +19,9 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  IconButton,
+  Button
 } from '@mui/material'
 import {
   People,
@@ -28,13 +31,15 @@ import {
   AccessTime,
   CheckCircle,
   Pending,
-  Error,
   Schedule,
-  Warning
+  Warning,
+  Error as ErrorIcon,
+  Notifications,
+  ArrowBack
 } from '@mui/icons-material'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { employeeAPI, attendanceAPI } from '../../services/api'
+import { employeeAPI, attendanceAPI, notificationAPI } from '../../services/api'
 import { useTheme } from '../../contexts/ThemeContext'
 import DashboardLayout from '../../components/DashboardLayout'
 
@@ -58,6 +63,7 @@ const HRDashboard = () => {
   const [topPerformers, setTopPerformers] = useState([])
   const [attendanceTrend, setAttendanceTrend] = useState([])
   const [departmentStats, setDepartmentStats] = useState([])
+  const [notifications, setNotifications] = useState([])
 
   useEffect(() => {
     const loadHRDashboardData = async () => {
@@ -75,11 +81,22 @@ const HRDashboard = () => {
           console.warn('Failed to fetch attendance:', err.message)
         }
 
+        // Fetch pending leaves
+        let pendingLeaves = 0
+        try {
+          const leavesRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leaves`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          pendingLeaves = (leavesRes.data || []).filter(l => l.status === 'pending').length
+        } catch (err) {
+          console.warn('Failed to fetch leaves:', err.message)
+        }
+
         setStats({
           totalEmployees: employees.length,
           presentToday,
           averageHours: 8.5,
-          pendingLeaves: 5
+          pendingLeaves
         })
 
         // Set top performers from real employees
@@ -102,20 +119,23 @@ const HRDashboard = () => {
           score: Math.min(100, 70 + (count * 5))
         }))
         setDepartmentStats(deptStats)
+
+        // Fetch notifications
+        try {
+          const notifRes = await notificationAPI.getAll()
+          setNotifications(notifRes.data?.data || notifRes.data || [])
+        } catch (err) {
+          console.warn('Failed to fetch notifications:', err.message)
+        }
       } catch (error) {
         console.warn('Failed to load HR dashboard data:', error.message)
         // Continue with empty data - don't break the page
       }
     }
 
-    // Set attendance trend data (always available)
+    // Set attendance trend data
     const trendData = [
-      { month: 'Jan', present: 142, absent: 8 },
-      { month: 'Feb', present: 138, absent: 12 },
-      { month: 'Mar', present: 145, absent: 5 },
-      { month: 'Apr', present: 140, absent: 10 },
-      { month: 'May', present: 148, absent: 7 },
-      { month: 'Jun', present: 135, absent: 15 }
+      { month: 'Current', present: stats.presentToday, absent: stats.totalEmployees - stats.presentToday }
     ]
     setAttendanceTrend(trendData)
 
@@ -159,35 +179,47 @@ const HRDashboard = () => {
 
   return (
     <DashboardLayout title="HR Dashboard">
-      {/* Clear Kongu-Style Header */}
-      <Paper elevation={0} sx={{
-        mb: 4,
-        borderRadius: 2,
-        bgcolor: '#ffffff',
-        border: '1px solid #e0e0e0',
-        overflow: 'hidden'
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
-        <Box sx={{ display: 'flex', borderBottom: '1px solid #e0e0e0', bgcolor: '#f8f9fa' }}>
-          <Box sx={{ 
-            px: 4, 
-            py: 2, 
-            borderBottom: '2px solid #2f80ed',
-            color: '#2f80ed',
-            fontWeight: 'bold',
-            mb: '-1px',
-            fontSize: '15px'
-          }}>
-            Dashboard / Overview
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              HR Dashboard
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Overview of organization attendance and metrics
+            </Typography>
           </Box>
         </Box>
-        <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ color: '#555' }}>
-            <strong>System Role:</strong> HUMAN RESOURCES PORTAL, <strong>Status:</strong> Active Session
-          </Typography>
+        <Box sx={{ textAlign: 'right' }}>
+           <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 600 }}>
+              System Role: HUMAN RESOURCES PORTAL
+           </Typography>
+           <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              Status: Active Session
+           </Typography>
         </Box>
-      </Paper>
+      </Box>
 
-      
+
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -229,55 +261,8 @@ const HRDashboard = () => {
         ))}
       </Grid>
 
-      {/* Top Performers and Attendance */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Card elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Top Performers
-              </Typography>
-              <List>
-                {topPerformers.map((performer, index) => (
-                  <ListItem key={performer.name}>
-                    <ListItemAvatar>
-                      <Avatar sx={{ 
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        fontWeight: 'bold' 
-                      }}>
-                        {getInitials(performer.name)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={performer.name}
-                      secondary={`${performer.completedTasks} tasks completed`}
-                    />
-                    <Box textAlign="right">
-                      <Typography variant="h6" color="primary">
-                        {performer.score}%
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={performer.score}
-                        sx={{
-                          width: 100,
-                          mt: 1,
-                          '& .MuiLinearProgress-bar': {
-                            backgroundColor: '#4caf50'
-                          },
-                          backgroundColor: 'rgba(76, 175, 80, 0.1)'
-                        }}
-                      />
-                    </Box>
-                  </ListItem>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Card elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, height: '100%' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -314,6 +299,55 @@ const HRDashboard = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        {/* Recent Notifications */}
+        <Grid item xs={12} sx={{ mt: 3 }}>
+          <Card elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Recent Notifications
+                </Typography>
+                <Button size="small" component={Link} to="/notifications" sx={{ textTransform: 'none' }}>
+                  View All
+                </Button>
+              </Box>
+              <List>
+                {notifications.length > 0 ? (
+                  notifications.slice(0, 5).map((notification, index) => (
+                    <ListItem key={index} alignItems="flex-start" sx={{ px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 48 }}>
+                        {notification.type === 'attendance' && <AccessTime color="primary" />}
+                        {notification.type === 'service' && <Assignment color="secondary" />}
+                        {notification.type === 'leave' && <Schedule color="warning" />}
+                        {notification.type === 'system' && <ErrorIcon color="error" />}
+                        {notification.type === 'general' && <Notifications color="action" />}
+                        {!['attendance', 'service', 'leave', 'system', 'general'].includes(notification.type) && <Notifications color="action" />}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={<Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{notification.title}</Typography>}
+                        secondary={
+                          <Box component="span">
+                            <Typography variant="body2" component="span" color="text.secondary">
+                              {notification.message}
+                            </Typography>
+                            <Typography variant="caption" display="block" color="text.disabled" sx={{ mt: 0.5 }}>
+                              {new Date(notification.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                  ))
+                ) : (
+                  <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 2 }}>
+                    No recent notifications.
+                  </Typography>
+                )}
+              </List>
             </CardContent>
           </Card>
         </Grid>

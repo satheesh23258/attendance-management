@@ -3,6 +3,8 @@ import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 
 import CssBaseline from "@mui/material/CssBaseline";
 import { Toaster } from "react-hot-toast";
+import HRRoute from "./components/HRRoute";
+import AdminRoute from "./components/AdminRoute";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
 // ── Lazy-loaded components ──────────────────────────────────────────────────
@@ -37,11 +39,11 @@ const SupportCenter      = lazy(() => import("./pages/support/SupportCenter"));
 
 // Admin pages
 const ManageEmployees        = lazy(() => import("./pages/admin/ManageEmployees"));
-const SystemReports          = lazy(() => import("./pages/admin/SystemReports"));
 const SystemSettings         = lazy(() => import("./pages/admin/SystemSettings"));
 const UserManagement         = lazy(() => import("./pages/admin/UserManagement"));
 const HybridPermissions      = lazy(() => import("./pages/admin/HybridPermissions"));
 const ManagePermissions      = lazy(() => import("./pages/admin/ManagePermissions"));
+const ManageNotifications    = lazy(() => import("./pages/admin/ManageNotifications"));
 const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceManagement"));
 const AuditLogs              = lazy(() => import("./pages/admin/AuditLogs"));
 const PayrollManagement      = lazy(() => import("./pages/finance/PayrollManagement"));
@@ -56,7 +58,6 @@ const EmployeeProfile = lazy(() => import("./pages/employees/EmployeeProfile"));
 // HR pages
 const EmployeeRecords  = lazy(() => import("./pages/hr/EmployeeRecords"));
 const AttendanceReports = lazy(() => import("./pages/hr/AttendanceReports"));
-const Performance      = lazy(() => import("./pages/hr/Performance"));
 const Analytics        = lazy(() => import("./pages/hr/Analytics"));
 const ClaimApprovals   = lazy(() => import("./pages/hr/ClaimApprovals"));
 const HRAttendance     = lazy(() => import("./pages/attendance/HRAttendance"));
@@ -84,7 +85,7 @@ const GeofenceManager = lazy(() => import("./pages/location/GeofenceManager"));
 // Reports
 const AttendanceAnalytics = lazy(() => import("./pages/reports/AttendanceAnalytics"));
 const FinancialReport     = lazy(() => import("./pages/reports/FinancialReport"));
-const PerformanceReport   = lazy(() => import("./pages/reports/PerformanceReport"));
+const financialReport     = lazy(() => import("./pages/reports/FinancialReport"));
 
 // Notifications
 const NotificationsPage      = lazy(() => import("./pages/notifications/Notifications"));
@@ -161,37 +162,35 @@ function App() {
             <Route path="/employee/notifications"    element={<NotificationsPage />} />
 
             {/* Admin */}
-            <Route path="/admin/manage-employees"    element={<ManageEmployees />} />
-            <Route path="/admin/employees"           element={<EmployeeList />} />
-            <Route path="/admin/employees/new"       element={<EmployeeForm />} />
-            <Route path="/admin/employees/edit/:id"  element={<EmployeeForm />} />
-            <Route path="/admin/reports"             element={<SystemReports />} />
-            <Route path="/admin/system-reports"      element={<SystemReports />} />
-            <Route path="/admin/system-settings"     element={<SystemSettings />} />
-            <Route path="/admin/user-management"     element={<UserManagement />} />
-            <Route path="/admin/expenses"            element={<ClaimApprovals />} />
-            <Route path="/admin/audit-logs"          element={<AuditLogs />} />
-            <Route path="/admin/asset-inventory"     element={<AssetInventory />} />
-            <Route path="/admin/shift-roster"        element={<ShiftRoster />} />
-            <Route path="/admin/payroll"             element={<PayrollManagement />} />
-            <Route path="/admin/hybrid-permissions"  element={<HybridPermissions />} />
-            <Route path="/admin/manage-permissions"  element={<ManagePermissions />} />
-            <Route path="/admin/services"            element={<AdminServiceManagement />} />
-            <Route path="/admin/services/new"        element={<ServiceForm />} />
-            <Route path="/admin/services/edit/:id"   element={<ServiceForm />} />
-            <Route path="/admin/services/:id"        element={<ServiceDetails />} />
+            <Route path="/admin/manage-employees"    element={<AdminRoute><ManageEmployees /></AdminRoute>} />
+            <Route path="/admin/employees"           element={<AdminRoute><EmployeeList /></AdminRoute>} />
+            <Route path="/admin/employees/new"       element={<AdminRoute><EmployeeForm /></AdminRoute>} />
+            <Route path="/admin/employees/edit/:id"  element={<AdminRoute><EmployeeForm /></AdminRoute>} />
+            <Route path="/admin/system-settings"     element={<AdminRoute><SystemSettings /></AdminRoute>} />
+            <Route path="/admin/user-management"     element={<AdminRoute><UserManagement /></AdminRoute>} />
+            <Route path="/admin/expenses"            element={<AdminRoute><ClaimApprovals /></AdminRoute>} />
+            <Route path="/admin/audit-logs"          element={<AdminRoute><AuditLogs /></AdminRoute>} />
+            <Route path="/admin/asset-inventory"     element={<AdminRoute><AssetInventory /></AdminRoute>} />
+            <Route path="/admin/shift-roster"        element={<AdminRoute><ShiftRoster /></AdminRoute>} />
+            <Route path="/admin/payroll"             element={<AdminRoute><PayrollManagement /></AdminRoute>} />
+            <Route path="/admin/hybrid-permissions"  element={<AdminRoute><HybridPermissions /></AdminRoute>} />
+            <Route path="/admin/manage-permissions"  element={<AdminRoute><ManagePermissions /></AdminRoute>} />
+            <Route path="/admin/notifications"       element={<AdminRoute><ManageNotifications /></AdminRoute>} />
+            <Route path="/admin/services"            element={<AdminRoute><AdminServiceManagement /></AdminRoute>} />
+            <Route path="/admin/services/new"        element={<AdminRoute><ServiceForm /></AdminRoute>} />
+            <Route path="/admin/services/edit/:id"   element={<AdminRoute><ServiceForm /></AdminRoute>} />
+            <Route path="/admin/services/:id"        element={<AdminRoute><ServiceDetails /></AdminRoute>} />
 
             {/* HR */}
-            <Route path="/hr/employee-records"      element={<EmployeeRecords />} />
-            <Route path="/hr/attendance-reports"    element={<AttendanceReports />} />
-            <Route path="/hr/performance"           element={<Performance />} />
-            <Route path="/hr/analytics"             element={<Analytics />} />
-            <Route path="/hr/leave-application"     element={<LeaveApplication />} />
-            <Route path="/hr/test-leave"            element={<TestLeave />} />
-            <Route path="/hr/attendance-management" element={<HRAttendance />} />
-            <Route path="/hr/expenses"              element={<ClaimApprovals />} />
-            <Route path="/hr/payroll"               element={<PayrollManagement />} />
-            <Route path="/hr/shift-roster"          element={<ShiftRoster />} />
+            <Route path="/hr/employee-records"      element={<HRRoute><EmployeeRecords /></HRRoute>} />
+            <Route path="/hr/attendance-reports"    element={<HRRoute><AttendanceReports /></HRRoute>} />
+            <Route path="/hr/analytics"             element={<HRRoute><Analytics /></HRRoute>} />
+            <Route path="/hr/leave-application"     element={<HRRoute><LeaveApplication /></HRRoute>} />
+            <Route path="/hr/test-leave"            element={<HRRoute><TestLeave /></HRRoute>} />
+            <Route path="/hr/attendance-management" element={<HRRoute permission="canManageAttendance"><HRAttendance /></HRRoute>} />
+            <Route path="/hr/expenses"              element={<HRRoute><ClaimApprovals /></HRRoute>} />
+            <Route path="/hr/payroll"               element={<HRRoute><PayrollManagement /></HRRoute>} />
+            <Route path="/hr/shift-roster"          element={<HRRoute><ShiftRoster /></HRRoute>} />
 
             {/* Services */}
             <Route path="/services"         element={<ServiceList />} />
@@ -202,8 +201,8 @@ function App() {
             <Route path="/employees/:id"    element={<EmployeeProfile />} />
 
             {/* Location */}
-            <Route path="/location/tracking" element={<LiveLocation />} />
-            <Route path="/location/live"     element={<LiveLocation />} />
+            <Route path="/location/tracking" element={<HRRoute><LiveLocation /></HRRoute>} />
+            <Route path="/location/live"     element={<HRRoute><LiveLocation /></HRRoute>} />
             <Route path="/location/history"  element={<LocationHistory />} />
             <Route path="/location/geofence" element={<GeofenceManager />} />
 
@@ -212,7 +211,6 @@ function App() {
 
             {/* Reports */}
             <Route path="/reports/attendance"  element={<AttendanceAnalytics />} />
-            <Route path="/reports/performance" element={<PerformanceReport />} />
             <Route path="/reports/financial"   element={<FinancialReport />} />
             <Route path="/reports/export"      element={<AttendanceAnalytics />} />
 

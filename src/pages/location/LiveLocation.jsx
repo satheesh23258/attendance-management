@@ -73,7 +73,7 @@ const LiveLocation = () => {
     const initMap = async () => {
       try {
         setMapError(null)
-        
+
         if (!mapRef.current) {
           console.warn('Map container not found')
           return
@@ -82,7 +82,7 @@ const LiveLocation = () => {
         // Load Google Maps API
         console.log('Loading Google Maps API...')
         const google = await loadGoogleMaps()
-        
+
         if (!google || !google.maps) {
           throw new Error('Google Maps API failed to load properly')
         }
@@ -111,7 +111,7 @@ const LiveLocation = () => {
             strokeWeight: 5
           }
         })
-        
+
         // Load data after map is ready
         await fetchData()
       } catch (error) {
@@ -147,7 +147,7 @@ const LiveLocation = () => {
 
     // Update every 10 seconds for real-time tracking
     const interval = setInterval(pollLocations, 10000)
-    
+
     return () => clearInterval(interval)
   }, [])
 
@@ -155,9 +155,9 @@ const LiveLocation = () => {
     try {
       setIsLoading(true)
       setMapError(null)
-      
+
       console.log('📍 Fetching employees and locations...')
-      
+
       const [empRes, locRes] = await Promise.all([
         employeeAPI.getAll(),
         locationAPI.getLiveLocations()
@@ -364,7 +364,11 @@ const LiveLocation = () => {
     ? locations
     : locations.filter(loc => loc.employeeId === parseInt(selectedEmployee) || loc.employeeId === selectedEmployee)
 
-  const canMarkAttendance = user && (user.role === 'admin' || user.role === 'hr')
+  const canMarkAttendance = user && (
+    user.role === 'admin' || 
+    user.role === 'hr' || 
+    (user.hybrid && user.hybridPermissions?.permissions?.canManageAttendance)
+  )
 
   const handleMarkAttendance = async (loc, status) => {
     if (!canMarkAttendance) return
@@ -428,7 +432,7 @@ const LiveLocation = () => {
       }
       googleMapRef.current.setCenter(position)
       googleMapRef.current.setZoom(16)
-      
+
       // Attempt routing
       drawRouteToEmployee(location)
     }
@@ -439,15 +443,15 @@ const LiveLocation = () => {
       toast.error('Routing not available yet');
       return;
     }
-    
+
     // Clear old route
-    directionsRendererRef.current.setDirections({routes: []});
+    directionsRendererRef.current.setDirections({ routes: [] });
 
     navigator.geolocation.getCurrentPosition((position) => {
       const origin = { lat: position.coords.latitude, lng: position.coords.longitude };
-      const destination = { 
-        lat: parseFloat(targetLocation.latitude) || 40.7128, 
-        lng: parseFloat(targetLocation.longitude) || -74.006 
+      const destination = {
+        lat: parseFloat(targetLocation.latitude) || 40.7128,
+        lng: parseFloat(targetLocation.longitude) || -74.006
       };
 
       directionsServiceRef.current.route({
@@ -509,22 +513,22 @@ const LiveLocation = () => {
             <Typography variant="h6" gutterBottom>Troubleshooting:</Typography>
             <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
               1. Check that .env file has VITE_GOOGLE_MAPS_API_KEY set:
-                 VITE_GOOGLE_MAPS_API_KEY=AIzaSyCy5HQVsFRhuA4-zyIeHFbhxUVJ_nYAnfY
+              VITE_GOOGLE_MAPS_API_KEY=AIzaSyCy5HQVsFRhuA4-zyIeHFbhxUVJ_nYAnfY
 
               2. Verify the API key is valid and enabled in Google Cloud Console
-              
+
               3. Enable these APIs in Google Cloud Console:
-                 - Maps JavaScript API
-                 - Places API
-                 - Maps Embed API
+              - Maps JavaScript API
+              - Places API
+              - Maps Embed API
 
               4. Check browser console (F12) for more detailed error messages
 
               5. Try refreshing the page (Ctrl+R)
 
               6. Check your API key restrictions:
-                 - If restricted by HTTP referer, add: localhost:3000
-                 - If restricted by IP, ensure your IP is whitelisted
+              - If restricted by HTTP referer, add: localhost:3000
+              - If restricted by IP, ensure your IP is whitelisted
             </Typography>
 
             <Button
@@ -661,7 +665,7 @@ const LiveLocation = () => {
                   variant="outlined"
                 />
               </Box>
-              
+
               {mapError && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                   <Typography variant="body2">

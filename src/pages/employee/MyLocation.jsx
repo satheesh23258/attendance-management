@@ -30,6 +30,7 @@ import {
   MyLocation as MyLocationIcon,
   EditLocation
 } from '@mui/icons-material'
+import DashboardLayout from '../../components/DashboardLayout'
 
 const MyLocation = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -153,8 +154,9 @@ const MyLocation = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
+    <DashboardLayout title="">
+      <Box sx={{ minHeight: '100vh', backgroundColor: 'transparent' }}>
+        {/* Header */}
       <Box sx={{
         background: '#00c853',
         color: 'white',
@@ -371,7 +373,8 @@ const MyLocation = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </DashboardLayout>
   )
 }
 

@@ -39,11 +39,12 @@ import {
   Search
 } from '@mui/icons-material'
 import { useTheme } from '../../contexts/ThemeContext'
-import { employeeAPI } from '../../services/api'
+import { employeeAPI, reportsAPI } from '../../services/api'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import { CloudUpload, FilterList, FileDownload } from '@mui/icons-material'
+
+import { FilterList, FileDownload } from '@mui/icons-material'
+import DashboardLayout from '../../components/DashboardLayout'
 
 const ManageEmployees = () => {
   const { colors } = useTheme()
@@ -58,7 +59,6 @@ const ManageEmployees = () => {
     email: '',
     phone: '',
     department: '',
-    position: '',
     status: 'Active',
     employeeId: '',
     isRemote: false,
@@ -99,7 +99,6 @@ const ManageEmployees = () => {
       email: '',
       phone: '',
       department: '',
-      position: '',
       status: 'Active',
       employeeId: ''
     })
@@ -113,7 +112,6 @@ const ManageEmployees = () => {
       email: employee.email,
       phone: employee.phone,
       department: employee.department,
-      position: employee.position,
       status: employee.status || 'Active',
       employeeId: employee.employeeId,
       isRemote: employee.isRemote || false,
@@ -124,27 +122,7 @@ const ManageEmployees = () => {
     setOpenDialog(true)
   }
 
-  const handleBulkImport = () => {
-    // Trigger hidden file input
-    document.getElementById('bulk-import-input').click()
-  }
 
-  const onFileChange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    const formData = new FormData()
-    formData.append('csv', file)
-    try {
-      setLoading(true)
-      await axios.post('/api/employees/bulk-import', formData)
-      toast.success('Bulk import successful')
-      loadEmployees()
-    } catch (err) {
-      toast.error('Import failed: ' + err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this employee?')) {
@@ -156,6 +134,27 @@ const ManageEmployees = () => {
         console.error('Failed to delete employee:', error)
         toast.error('Failed to delete employee')
       }
+    }
+  }
+
+  const handleExport = async () => {
+    try {
+      toast.loading('Downloading employee list...')
+      const response = await reportsAPI.exportEmployees()
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'employee_list.csv')
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      
+      toast.dismiss()
+      toast.success('Download started')
+    } catch (error) {
+      toast.dismiss()
+      toast.error('Export failed')
     }
   }
 
@@ -206,8 +205,9 @@ const ManageEmployees = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
+    <DashboardLayout title="">
+      <Box sx={{ minHeight: '100vh', backgroundColor: 'transparent' }}>
+        {/* Header */}
       <Box sx={{
         background: '#00c853',
         color: 'white',
@@ -237,23 +237,14 @@ const ManageEmployees = () => {
           </Box>
         </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <input type="file" id="bulk-import-input" hidden accept=".csv" onChange={onFileChange} />
             <Button
               variant="contained"
               color="inherit"
-              startIcon={<CloudUpload />}
-              onClick={handleBulkImport}
+              startIcon={<FileDownload />}
+              onClick={handleExport}
               sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
             >
-              Bulk Import
-            </Button>
-            <Button
-              variant="outlined"
-              color="inherit"
-              onClick={() => window.open('/api/employees/import-template', '_blank')}
-              sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'white', '&:hover': { borderColor: 'white' } }}
-            >
-              Template
+              Export All
             </Button>
             <Button
               variant="contained"
@@ -360,7 +351,6 @@ const ManageEmployees = () => {
                       <TableCell>Employee</TableCell>
                       <TableCell>Employee ID</TableCell>
                       <TableCell>Department</TableCell>
-                      <TableCell>Position</TableCell>
                       <TableCell>Status</TableCell>
                       <TableCell>Join Date</TableCell>
                       <TableCell>Actions</TableCell>
@@ -386,7 +376,6 @@ const ManageEmployees = () => {
                         </TableCell>
                         <TableCell>{employee.employeeId || 'N/A'}</TableCell>
                         <TableCell>{employee.department}</TableCell>
-                        <TableCell>{employee.position}</TableCell>
                         <TableCell>
                           <Chip
                             label={employee.status}
@@ -480,15 +469,6 @@ const ManageEmployees = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Position"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -558,7 +538,8 @@ const ManageEmployees = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </DashboardLayout>
   )
 }
 

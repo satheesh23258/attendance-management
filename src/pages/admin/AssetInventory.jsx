@@ -33,8 +33,11 @@ import {
   CheckCircle,
   Construction,
   Search,
-  AssignmentTurnedIn
+  AssignmentTurnedIn,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { assetAPI, employeeAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
@@ -45,6 +48,7 @@ const AssetInventory = () => {
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -103,6 +107,43 @@ const AssetInventory = () => {
 
   return (
     <DashboardLayout title="Asset & Inventory Management">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Asset & Inventory Management
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Track and manage company assets and equipment
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchData} title="Refresh">
+            <Refresh />
+          </IconButton>
+        </Box>
+      </Box>
+
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
            <Card sx={{ borderRadius: 6, border: '1px solid #eee' }} elevation={0}>
@@ -121,14 +162,15 @@ const AssetInventory = () => {
            </Card>
         </Grid>
         <Grid item xs={12} md={6}>
-            <Box sx={{ p: 2, bgcolor: '#000', color: '#fff', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 4, height: '100%' }}>
+            {/* Action Card */}
+            <Box sx={{ p: 2, bgcolor: '#ffffff', border: '1px solid #eee', color: '#000', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 4, height: '100%' }}>
                 <Box>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>Procurement Ready</Typography>
                     <Typography variant="body2" sx={{ opacity: 0.7 }}>Expand your inventory or track lifecycle events.</Typography>
                 </Box>
                 <Button 
                     variant="contained" startIcon={<Add />} onClick={() => setOpenAdd(true)}
-                    sx={{ bgcolor: '#fff', color: '#000', borderRadius: 3, fontWeight: 700, textTransform: 'none', px: 3, '&:hover': { bgcolor: '#eee' } }}
+                    sx={{ bgcolor: '#00c853', color: '#fff', borderRadius: 3, fontWeight: 700, textTransform: 'none', px: 3, '&:hover': { bgcolor: '#00a844' } }}
                 >
                     Add Asset
                 </Button>

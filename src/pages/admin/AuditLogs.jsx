@@ -27,8 +27,11 @@ import {
   Fingerprint,
   Info,
   Terminal,
-  SecurityUpdateGood
+  SecurityUpdateGood,
+  ArrowBack,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { auditAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
@@ -38,6 +41,7 @@ const AuditLogs = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ module: '', action: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   const modules = ['Attendance', 'Leave', 'Expenses', 'Employee', 'System', 'Auth'];
 
@@ -71,13 +75,41 @@ const AuditLogs = () => {
 
   return (
     <DashboardLayout title="System Audit Logs">
-      {/* Header Info */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-         <Avatar sx={{ bgcolor: '#000', color: '#fff' }}><Terminal /></Avatar>
-         <Box>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>Immutability Check</Typography>
-            <Typography variant="body2" color="textSecondary">Every administrative action is tracked for transparency and security.</Typography>
-         </Box>
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              System Audit Logs
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Track administrative actions for transparency and security
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchLogs} title="Refresh">
+            <RefreshIcon />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Filters Bar */}

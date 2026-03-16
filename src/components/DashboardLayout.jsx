@@ -18,7 +18,7 @@ const DashboardLayout = ({ children, title }) => {
 
   const generateBreadcrumbs = () => {
     const pathnames = location.pathname.split('/').filter(x => x)
-    
+
     return (
       <Breadcrumbs aria-label="breadcrumb" sx={{ fontSize: '0.875rem' }}>
         <MuiLink component={Link} to="/" underline="hover" color="inherit">
@@ -27,7 +27,7 @@ const DashboardLayout = ({ children, title }) => {
         {pathnames.map((name, index) => {
           const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`
           const isLast = index === pathnames.length - 1
-          
+
           return isLast ? (
             <Typography key={name} color="text.primary" sx={{ fontWeight: 500 }}>
               {name.charAt(0).toUpperCase() + name.slice(1)}
@@ -55,7 +55,14 @@ const DashboardLayout = ({ children, title }) => {
           {/* Top Breadcrumbs specific to dashboard pages */}
           <Box sx={{ mb: 3 }}>
             {title && (
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#000000', mb: 0.5 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: location.pathname.includes('/employee') ? '#00c853' : '#000000', 
+                  mb: 0.5 
+                }}
+              >
                 {title}
               </Typography>
             )}

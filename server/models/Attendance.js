@@ -25,7 +25,9 @@ const attendanceSchema = new mongoose.Schema(
     overtime: { type: Number, default: 0 },
     location: locationSchema,
     markedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    markedByName: { type: String },
   },
+
   { timestamps: true }
 );
 

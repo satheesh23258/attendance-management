@@ -68,6 +68,13 @@ const userSchema = new mongoose.Schema(
         type: String,
         enum: ['admin', 'hr', 'employee'],
       }],
+      permissions: {
+        canAccessHR: { type: Boolean, default: false },
+        canAccessEmployee: { type: Boolean, default: false },
+        canViewReports: { type: Boolean, default: false },
+        canManageAttendance: { type: Boolean, default: false },
+        canManageLeaves: { type: Boolean, default: false }
+      },
       granterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

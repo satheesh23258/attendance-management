@@ -19,19 +19,6 @@ const assetSchema = new mongoose.Schema({
   status: { type: String, enum: ['assigned', 'returned', 'damaged'], default: 'assigned' }
 }, { timestamps: true });
 
-const performanceSchema = new mongoose.Schema({
-  period: { type: String, required: true }, // e.g., "Q1 2024"
-  kpis: [{
-    title: String,
-    target: String,
-    achievement: String,
-    rating: { type: Number, min: 1, max: 5 }
-  }],
-  selfAppraisal: String,
-  managerFeedback: String,
-  overallRating: { type: Number, min: 1, max: 5 },
-  status: { type: String, enum: ['draft', 'submitted', 'reviewed'], default: 'draft' }
-}, { timestamps: true });
 
 const payrollSchema = new mongoose.Schema({
   month: { type: String, required: true }, // YYYY-MM
@@ -59,13 +46,17 @@ const employeeSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'hr', 'employee'],
+      enum: ['admin', 'hr', 'employee', 'associate'],
       default: 'employee',
     },
     department: {
       type: String,
       required: [true, 'Department is required'],
-      enum: ['IT', 'Human Resources', 'Sales', 'Marketing', 'Finance', 'Operations', 'Customer Support', 'Management', 'Recruitment', 'Training & Development', 'Compensation & Benefits', 'Engineering'],
+      enum: ['IT', 'Human Resources', 'HR', 'Sales', 'Marketing', 'Finance', 'Operations', 'Customer Support', 'Management', 'Recruitment', 'Training & Development', 'Compensation & Benefits', 'Engineering'],
+    },
+    position: {
+      type: String,
+      default: '',
     },
     phone: {
       type: String,
@@ -92,19 +83,32 @@ const employeeSchema = new mongoose.Schema(
     // Enhanced Features Data
     documents: [documentSchema],
     assets: [assetSchema],
-    performance: [performanceSchema],
     payroll: [payrollSchema],
     isRemote: { type: Boolean, default: false },
     officeLocation: {
-        lat: { type: Number, default: 40.7128 },
-        lng: { type: Number, default: -74.006 },
-        radius: { type: Number, default: 100 } // meters
+        lat: { type: Number, default: 11.27218 },
+        lng: { type: Number, default: 77.604 },
+
+        radius: { type: Number, default: 1000 } // meters
     },
     biometricTemplate: { type: String, default: '' }, // For FaceID/Fingerprint hash
-    isBiometricEnabled: { type: Boolean, default: false }
+    isBiometricEnabled: { type: Boolean, default: false },
+    branchName: { type: String, default: '' },
+    hybridPermissions: {
+      hasAccess: { type: Boolean, default: false },
+      permissions: { type: Object, default: {} }
+    }
   },
   { timestamps: true }
 );
+
+// Auto-generate Employee ID if not provided
+employeeSchema.pre('validate', function(next) {
+  if (!this.employeeId || (typeof this.employeeId === 'string' && this.employeeId.trim() === '')) {
+    this.employeeId = `EMP${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+  }
+  next();
+});
 
 employeeSchema.set('toJSON', {
   virtuals: true,

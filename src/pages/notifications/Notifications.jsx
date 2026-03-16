@@ -36,8 +36,11 @@ import {
   CheckCircle,
   Warning,
   DateRange,
-  WorkHistory
+  WorkHistory,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { notificationAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -52,6 +55,7 @@ const NotificationsPage = () => {
   const [statusFilter, setStatusFilter] = useState('all'); // all, read, unread
   const [importanceFilter, setImportanceFilter] = useState('all'); // all, normal, high, urgent
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchNotifications = async () => {
     try {
@@ -146,6 +150,53 @@ const NotificationsPage = () => {
 
   return (
     <DashboardLayout title="Notification Center">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Your Notifications
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Stay updated with system alerts and messages
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            color="inherit"
+            variant="outlined"
+            startIcon={<MarkEmailRead />}
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0 || loading}
+            sx={{ borderRadius: 2, borderColor: 'rgba(255,255,255,0.3)' }}
+          >
+            Mark All Read
+          </Button>
+          <IconButton color="inherit" onClick={fetchNotifications} title="Refresh">
+            <Refresh />
+          </IconButton>
+        </Box>
+      </Box>
+
       <Card sx={{ mb: 3, p: 2, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
           <Box display="flex" alignItems="center" gap={2}>
@@ -155,21 +206,12 @@ const NotificationsPage = () => {
               </Avatar>
             </Badge>
             <Box>
-              <Typography variant="h6" fontWeight="bold">Your Notifications</Typography>
+              <Typography variant="h6" fontWeight="bold">Notification Overview</Typography>
               <Typography variant="body2" color="text.secondary">
                 You have {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
               </Typography>
             </Box>
           </Box>
-          <Button
-            variant="outlined"
-            startIcon={<MarkEmailRead />}
-            onClick={handleMarkAllAsRead}
-            disabled={unreadCount === 0 || loading}
-            sx={{ borderRadius: 2 }}
-          >
-            Mark All Read
-          </Button>
         </Box>
       </Card>
 

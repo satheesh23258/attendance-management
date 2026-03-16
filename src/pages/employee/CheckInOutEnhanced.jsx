@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material'
 import { useAuth } from '../../contexts/AuthContext'
 import DashboardLayout from '../../components/DashboardLayout'
-import axios from 'axios'
+import { attendanceAPI, employeeAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 
 const CheckInOutEnhanced = () => {
@@ -52,7 +52,7 @@ const CheckInOutEnhanced = () => {
 
   const fetchEmployeeProfile = async () => {
     try {
-      const { data } = await axios.get('/api/employees/me')
+      const { data } = await employeeAPI.getMe()
       setEmployeeProfile(data)
     } catch (e) {
       console.error('Failed to fetch employee profile')
@@ -61,11 +61,10 @@ const CheckInOutEnhanced = () => {
 
   const fetchTodayStatus = async () => {
     try {
-      const { data } = await axios.get('/api/attendance/today')
-      const myRecord = data.find(r => r.employeeId === user.id)
-      if (myRecord) {
-        setTodayRecord(myRecord)
-        setStatus(myRecord.checkOut ? 'checked_out' : 'checked_in')
+      const { data } = await attendanceAPI.getMyTodayAttendance()
+      if (data) {
+        setTodayRecord(data)
+        setStatus(data.checkOut ? 'checked_out' : 'checked_in')
       }
     } catch (e) {
       console.error('Failed to fetch attendance status')
@@ -87,7 +86,7 @@ const CheckInOutEnhanced = () => {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await axios.post('/api/attendance/check-in', {
+      const { data } = await attendanceAPI.checkIn({
         lat: location?.lat,
         lng: location?.lng
       })
@@ -105,7 +104,7 @@ const CheckInOutEnhanced = () => {
   const handleCheckOut = async () => {
     setLoading(true)
     try {
-      const { data } = await axios.post('/api/attendance/check-out')
+      const { data } = await attendanceAPI.checkOut()
       toast.success('Successfully Checked Out!')
       setTodayRecord(data)
       setStatus('checked_out')
@@ -221,7 +220,7 @@ const CheckInOutEnhanced = () => {
                       <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 3 }}>
                          <Typography variant="caption" color="text.secondary" display="block">WORK MODE</Typography>
                          <Typography variant="body1" fontWeight="bold">
-                            {employeeProfile?.isRemote ? "Remote / Hybrid" : `Office Bound (${employeeProfile?.officeLocation?.radius || 100}m)`}
+                            {employeeProfile?.isRemote ? "Remote / Hybrid" : `Office Bound (${employeeProfile?.officeLocation?.radius || 1000}m)`}
                          </Typography>
                       </Box>
                    </Grid>

@@ -247,9 +247,9 @@ export const RoleThemeProvider = ({ children, role }) => {
         },
         MuiTypography: {
           styleOverrides: {
-             root: {
-                color: '#000000'
-             }
+            root: {
+              color: '#000000'
+            }
           }
         }
       }

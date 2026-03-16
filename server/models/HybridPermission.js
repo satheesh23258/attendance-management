@@ -26,23 +26,23 @@ const hybridPermissionSchema = new mongoose.Schema({
   permissions: {
     canAccessHR: {
       type: Boolean,
-      default: true
+      default: false
     },
     canAccessEmployee: {
       type: Boolean,
-      default: true
+      default: false
     },
     canViewReports: {
       type: Boolean,
-      default: true
+      default: false
     },
     canManageAttendance: {
       type: Boolean,
-      default: false
+      default: true
     },
     canManageLeaves: {
       type: Boolean,
-      default: true
+      default: false
     }
   },
   status: {

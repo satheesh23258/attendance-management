@@ -26,13 +26,17 @@ import {
   Schedule,
   CheckCircleOutline,
   KeyboardArrowRight,
-  HelpOutline
+  HelpOutline,
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { ticketAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
 
 const SupportCenter = () => {
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openNew, setOpenNew] = useState(false);
@@ -67,9 +71,53 @@ const SupportCenter = () => {
 
   return (
     <DashboardLayout title="Support & Helpdesk">
+      {/* Header Banner */}
+      <Box sx={{
+        background: '#00c853',
+        color: 'white',
+        p: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        mb: 3,
+        borderRadius: '0 0 16px 16px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate(-1)}
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+            title="Go back"
+          >
+            <ArrowBack />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              Helpdesk & Support
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              Get assistance with technical issues or HR queries
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton color="inherit" onClick={fetchTickets} title="Refresh">
+            <Refresh />
+          </IconButton>
+          <Button
+            variant="contained"
+            onClick={() => setOpenNew(true)}
+            startIcon={<Add />}
+            sx={{ bgcolor: 'white', color: '#00c853', borderRadius: 2, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#f5f5f5' } }}
+          >
+            Create Ticket
+          </Button>
+        </Box>
+      </Box>
       <Grid container spacing={4}>
         <Grid item xs={12} md={4}>
-           <Card sx={{ borderRadius: 6, bgcolor: '#000', color: '#fff', mb: 3 }} elevation={0}>
+           <Card sx={{ borderRadius: 6, bgcolor: '#00c853', color: '#fff', mb: 3 }} elevation={0}>
               <CardContent sx={{ p: 4 }}>
                  <SupportAgent sx={{ fontSize: 48, mb: 2 }} />
                  <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>How can we help?</Typography>
@@ -79,7 +127,7 @@ const SupportCenter = () => {
                  <Button 
                     fullWidth variant="contained" startIcon={<Add />} 
                     onClick={() => setOpenNew(true)}
-                    sx={{ bgcolor: '#fff', color: '#000', borderRadius:3, py: 1.5, fontWeight: 700, '&:hover': { bgcolor: '#eee' }, textTransform: 'none' }}
+                    sx={{ bgcolor: '#fff', color: '#00c853', borderRadius:3, py: 1.5, fontWeight: 700, '&:hover': { bgcolor: '#eee' }, textTransform: 'none' }}
                  >
                     Create New Ticket
                  </Button>

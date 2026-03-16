@@ -32,11 +32,11 @@ import toast from 'react-hot-toast';
 
 const GeofenceManager = () => {
   const [locations, setLocations] = useState([
-    { id: 1, name: 'Main Office - NY', lat: 40.7128, lng: -74.006, radius: 100, active: true },
+    { id: 1, name: 'Main Office - NY', lat: 40.7128, lng: -74.006, radius: 1000, active: true },
     { id: 2, name: 'Downtown Branch', lat: 40.7282, lng: -73.9942, radius: 50, active: true }
   ]);
 
-  const [newLoc, setNewLoc] = useState({ name: '', lat: '', lng: '', radius: 100 });
+  const [newLoc, setNewLoc] = useState({ name: '', lat: '', lng: '', radius: 1000 });
 
   const handleToggle = (id) => {
     setLocations(prev => prev.map(l => l.id === id ? { ...l, active: !l.active } : l));
@@ -45,7 +45,7 @@ const GeofenceManager = () => {
   const handleAdd = () => {
     if (!newLoc.name || !newLoc.lat || !newLoc.lng) return toast.error('Please fill all fields');
     setLocations([...locations, { ...newLoc, id: Date.now(), active: true }]);
-    setNewLoc({ name: '', lat: '', lng: '', radius: 100 });
+    setNewLoc({ name: '', lat: '', lng: '', radius: 1000 });
     toast.success('Geofence added');
   };
 
