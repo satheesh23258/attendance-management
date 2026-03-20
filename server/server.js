@@ -92,7 +92,10 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/tickets', ticketRoutes);
 import reportsRoutes from './routes/reportsRoutes.js';
+import mapRoutes from './routes/mapRoutes.js';
+
 app.use('/api/reports', reportsRoutes);
+app.use('/api', mapRoutes);
 
 
 // Seed database with UI data if empty

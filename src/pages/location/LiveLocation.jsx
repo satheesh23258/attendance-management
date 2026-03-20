@@ -342,17 +342,20 @@ const LiveLocation = () => {
   }
 
   const getEmployeeName = (employeeId) => {
-    const employee = employeeMap[employeeId] || employees.find(e => e.id === employeeId || e._id === employeeId)
+    if (employeeId && typeof employeeId === 'object') return employeeId.name || 'Unknown'
+    const employee = employeeMap[employeeId] || employees.find(e => e.id === employeeId || e._id === employeeId || e.employeeId === employeeId)
     return employee ? employee.name : 'Unknown'
   }
 
   const getEmployeeEmail = (employeeId) => {
-    const employee = employeeMap[employeeId] || employees.find(e => e.id === employeeId || e._id === employeeId)
+    if (employeeId && typeof employeeId === 'object') return employeeId.email || ''
+    const employee = employeeMap[employeeId] || employees.find(e => e.id === employeeId || e._id === employeeId || e.employeeId === employeeId)
     return employee ? employee.email : null
   }
 
   const getEmployeeAvatar = (employeeId) => {
-    const employee = employeeMap[employeeId] || employees.find(e => e.id === employeeId || e._id === employeeId)
+    if (employeeId && typeof employeeId === 'object') return employeeId.avatar || ''
+    const employee = employeeMap[employeeId] || employees.find(e => e.id === employeeId || e._id === employeeId || e.employeeId === employeeId)
     return employee ? employee.avatar : ''
   }
 
@@ -374,7 +377,9 @@ const LiveLocation = () => {
     if (!canMarkAttendance) return
     if (!status) return
 
-    const emp = employees.find(e => e.id === loc.employeeId || e._id === loc.employeeId || e.employeeId === loc.employeeId)
+    const actualEmpId = loc.employeeId && typeof loc.employeeId === 'object' ? loc.employeeId._id : loc.employeeId
+    const emp = employees.find(e => e.id === actualEmpId || e._id === actualEmpId || e.employeeId === actualEmpId)
+    
     if (!emp) {
       toast.error('Employee not found in system')
       return
@@ -387,7 +392,8 @@ const LiveLocation = () => {
         officeLng: -74.0060,
         radiusMeters: 500,
         allowedStartTime: '09:30',
-        statusOverride: status,
+        status: status,
+        date: new Date().toISOString().split('T')[0]
       })
       toast.success(`Attendance marked as ${status} for ${emp.name}`)
     } catch (err) {

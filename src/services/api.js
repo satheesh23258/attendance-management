@@ -90,6 +90,7 @@ export const attendanceAPI = {
   getMyTodayAttendance: () => api.get('/attendance/my-today'),
   getMyHistory: (params) => api.get('/attendance/my-history', { params }),
   getAttendanceHistory: (params) => api.get('/attendance/history', { params }),
+  getEmployeeAttendanceHistory: (employeeId) => api.get('/attendance/history', { params: { employeeId } }),
   getMonthlyReport: (params) => api.get('/attendance/monthly-report', { params }),
   getAttendanceStats: (params) => api.get('/attendance/stats', { params }),
   mark: (data) => api.post('/attendance/mark', data),
@@ -104,6 +105,19 @@ export const locationAPI = {
   getLocationHistory: (params) => api.get('/location/history', { params }),
   getLiveLocations: () => api.get('/location/live'),
   getRouteHistory: (params) => api.get('/location/route-history', { params }),
+}
+
+// Map API
+export const mapAPI = {
+  updateLiveLocation: (data) => api.post('/live-location/update', data),
+  getMapLocations: () => api.get('/map/locations'),
+  getLocationHistory: (userId) => api.get(`/map/location-history/${userId}`),
+}
+
+// Audit API
+export const auditAPI = {
+  getLogs: (params) => api.get('/audit', { params }),
+  exportLogs: () => api.get('/audit/export', { responseType: 'blob' })
 }
 
 // Service API
@@ -141,6 +155,17 @@ export const leaveAPI = {
   getMyLeaves: () => api.get('/leaves/my'),
   getAll: () => api.get('/leaves'),
   updateStatus: (id, data) => api.put(`/leaves/${id}/status`, data),
+}
+
+// Asset API
+export const assetAPI = {
+  getAll: (params) => api.get('/assets', { params }),
+  getById: (id) => api.get(`/assets/${id}`),
+  create: (data) => api.post('/assets', data),
+  update: (id, data) => api.put(`/assets/${id}`, data),
+  delete: (id) => api.delete(`/assets/${id}`),
+  assign: (id, data) => api.post(`/assets/${id}/assign`, data),
+  return: (id) => api.post(`/assets/${id}/return`),
 }
 
 // Settings API

@@ -33,7 +33,8 @@ import {
   Work,
   CalendarToday,
   Badge,
-  Refresh
+  Refresh,
+  PhotoCamera
 } from '@mui/icons-material'
 
 import { useNavigate } from 'react-router-dom'
@@ -82,6 +83,18 @@ const MyProfile = () => {
 
   const handleInputChange = (field, value) => {
     setEditedProfile({ ...editedProfile, [field]: value })
+  }
+
+  const handleAvatarChange = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setEditedProfile({ ...editedProfile, avatar: e.target.result })
+        setProfile({ ...profile, avatar: e.target.result })
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const getInitials = (name) => {
@@ -140,18 +153,40 @@ const MyProfile = () => {
           <Grid item xs={12} md={4}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
-                <Avatar 
-                  sx={{ 
-                    width: 120, 
-                    height: 120, 
-                    mx: 'auto', 
-                    mb: 2, 
-                    fontSize: 48,
-                    bgcolor: 'primary.main'
-                  }}
-                >
-                  {getInitials(profile.name)}
-                </Avatar>
+                <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                  <Avatar 
+                    src={profile.avatar}
+                    sx={{ 
+                      width: 120, 
+                      height: 120, 
+                      mx: 'auto', 
+                      mb: 2, 
+                      fontSize: 48,
+                      bgcolor: 'primary.main',
+                      border: '4px solid white',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    {!profile.avatar && getInitials(profile.name)}
+                  </Avatar>
+                  
+                  <IconButton
+                    color="primary"
+                    aria-label="upload picture"
+                    component="label"
+                    sx={{
+                      position: 'absolute',
+                      bottom: 16,
+                      right: -10,
+                      backgroundColor: 'white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      '&:hover': { backgroundColor: '#f5f5f5' }
+                    }}
+                  >
+                    <input hidden accept="image/*" type="file" onChange={handleAvatarChange} />
+                    <PhotoCamera fontSize="small" />
+                  </IconButton>
+                </Box>
                 <Typography variant="h5" gutterBottom>
                   {profile.name}
                 </Typography>

@@ -52,9 +52,6 @@ const EmployeeSignup = () => {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [verificationLoading, setVerificationLoading] = useState(false)
-  const [phoneVerified, setPhoneVerified] = useState(false)
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false)
-  const [phoneOtpCode, setPhoneOtpCode] = useState('')
 
   const [emailVerified, setEmailVerified] = useState(false)
   const [emailOtpSent, setEmailOtpSent] = useState(false)
@@ -97,43 +94,6 @@ const EmployeeSignup = () => {
       setEmailVerified(true)
       setEmailOtpSent(false)
       setSuccess('Email verified!')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP')
-    } finally {
-      setVerificationLoading(false)
-    }
-  }
-
-  const handleSendPhoneOtp = async () => {
-    if (!formData.phone) {
-      setError('Please enter a phone number')
-      return
-    }
-    setVerificationLoading(true)
-    setError('')
-    try {
-      await authAPI.sendVerificationOtp({ identifier: formData.phone, type: 'phone' })
-      setPhoneOtpSent(true)
-      setSuccess('Verification code sent to your phone!')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP')
-    } finally {
-      setVerificationLoading(false)
-    }
-  }
-
-  const handleVerifyPhoneOtp = async () => {
-    if (!phoneOtpCode) {
-      setError('Please enter the phone verification code')
-      return
-    }
-    setVerificationLoading(true)
-    setError('')
-    try {
-      await authAPI.verifyOtp({ identifier: formData.phone, otp: phoneOtpCode, purpose: 'verify_phone' })
-      setPhoneVerified(true)
-      setPhoneOtpSent(false)
-      setSuccess('Phone verified!')
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid OTP')
     } finally {
@@ -334,7 +294,7 @@ const EmployeeSignup = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+1 (555) 123-4567"
-                    disabled={phoneVerified}
+                    required
                   
                 InputProps={{
                   startAdornment: (
@@ -344,45 +304,6 @@ const EmployeeSignup = () => {
                   )
                 }}
               />
-                  {formData.phone && !phoneVerified && (
-                    <Box sx={{ mt: 1 }}>
-                      {!phoneOtpSent ? (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          fullWidth
-                          onClick={handleSendPhoneOtp}
-                          disabled={verificationLoading}
-                        >
-                          {verificationLoading ? 'Sending...' : 'Verify Phone'}
-                        </Button>
-                      ) : (
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <TextField
-                            size="small"
-                            label="Phone OTP"
-                            value={phoneOtpCode}
-                            onChange={(e) => setPhoneOtpCode(e.target.value)}
-                            placeholder="000000"
-                          />
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={handleVerifyPhoneOtp}
-                            disabled={verificationLoading || !phoneOtpCode}
-                          >
-                            Verify
-                          </Button>
-                        </Box>
-                      )}
-                    </Box>
-                  )}
-                  {phoneVerified && (
-                    <Box sx={{ mt: 1, p: 0.5, bgcolor: '#e8f5e9', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CheckCircle sx={{ color: '#1B5E20', fontSize: 16 }} />
-                      <Typography variant="caption" sx={{ color: "#000000" }} gutterBottom fontWeight="bold">Phone verified</Typography>
-                    </Box>
-                  )}
                 </Box>
               </Box>
 
@@ -462,7 +383,7 @@ const EmployeeSignup = () => {
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading || !phoneVerified || !emailVerified}
+                disabled={loading || !emailVerified}
                 sx={{ 
                   bgcolor: '#000000', color: '#FFFFFF',
                   '&:hover': { bgcolor: '#000000' },
@@ -470,7 +391,7 @@ const EmployeeSignup = () => {
                   fontSize: '16px'
                 }}
               >
-                {!emailVerified || !phoneVerified ? 'Verify Email & Phone to Continue' : (loading ? 'Creating Account...' : 'Create Employee Account')}
+                {!emailVerified ? 'Verify Email to Continue' : (loading ? 'Creating Account...' : 'Create Employee Account')}
               </Button>
             </form>
 

@@ -100,10 +100,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email must be verified to register.' });
     }
 
-    const phoneOtp = await TempOtp.findOne({ identifier: phone.trim(), purpose: 'verify_phone', verified: true });
-    if (!phoneOtp) {
-      return res.status(400).json({ message: 'Phone must be verified to register.' });
-    }
+    // Phone verification is no longer required
 
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
@@ -118,9 +115,10 @@ router.post('/register', async (req, res) => {
 
     const empId = employeeId || `EMP${Date.now().toString().slice(-5)}`;
 
-    // Admin approval logic
+    // Admin and HR approval logic
+    const requiresApproval = role === 'admin' || role === 'hr';
+    const status = requiresApproval ? 'pending' : 'active';
     const isNewAdmin = role === 'admin';
-    const status = isNewAdmin ? 'pending' : 'active';
 
     const user = await User.create({
       name,
@@ -133,6 +131,7 @@ router.post('/register', async (req, res) => {
       phone: phone || '',
       phoneVerified: false,
       branchName: req.body.branchName || '',
+      branchLocation: req.body.branchLocation || '',
     });
 
     // Also add to employees collection for consistency
@@ -148,6 +147,7 @@ router.post('/register', async (req, res) => {
         isActive: status === 'active',
         joinDate: new Date().toISOString().split('T')[0],
         branchName: req.body.branchName || '',
+        branchLocation: req.body.branchLocation || '',
       },
       { upsert: true }
     );
@@ -480,6 +480,7 @@ router.put('/profile', auth, async (req, res) => {
     if (phone) user.phone = phone;
     if (department) user.department = department;
     if (branchName !== undefined) user.branchName = branchName;
+    if (req.body.branchLocation !== undefined) user.branchLocation = req.body.branchLocation;
 
     await user.save();
 
@@ -491,7 +492,8 @@ router.put('/profile', auth, async (req, res) => {
           name: user.name,
           phone: user.phone,
           department: user.department,
-          branchName: user.branchName
+          branchName: user.branchName,
+          branchLocation: user.branchLocation
         }
       },
       { new: true, runValidators: true }

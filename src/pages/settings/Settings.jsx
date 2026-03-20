@@ -10,12 +10,14 @@ import {
   Visibility, VisibilityOff, Build, Business, FlightTakeoff
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { settingsAPI, userAPI } from '../../services/api';
 import DashboardLayout from '../../components/DashboardLayout';
 import toast from 'react-hot-toast';
 
 const Settings = () => {
   const { user, login } = useAuth(); // for re-auth on password change if needed
+  const { setExactThemeMode } = useTheme();
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,6 +60,9 @@ const Settings = () => {
       
       if (uRes?.data) {
         setUserSettings(prev => ({ ...prev, ...uRes.data }));
+        if (uRes.data.theme) {
+            setExactThemeMode(uRes.data.theme);
+        }
       }
       if (sRes?.data) {
         setSystemSettings(prev => ({ ...prev, ...sRes.data }));
@@ -70,6 +75,10 @@ const Settings = () => {
   };
 
   const handleUserSettingChange = (field, value, isPrivacy = false) => {
+    if (field === 'theme') {
+        setExactThemeMode(value);
+    }
+    
     setUserSettings(prev => {
       if (isPrivacy) {
         return { ...prev, privacy: { ...prev.privacy, [field]: value } };

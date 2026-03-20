@@ -245,9 +245,10 @@ class ServiceService {
         switch (filters.sortBy) {
           case 'createdAt':
             return new Date(b.createdAt) - new Date(a.createdAt)
-          case 'priority':
+          case 'priority': {
             const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 }
             return priorityOrder[b.priority] - priorityOrder[a.priority]
+          }
           case 'status':
             return a.status.localeCompare(b.status)
           default:

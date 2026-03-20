@@ -64,7 +64,13 @@ const CheckInOutEnhanced = () => {
       const { data } = await attendanceAPI.getMyTodayAttendance()
       if (data) {
         setTodayRecord(data)
-        setStatus(data.checkOut ? 'checked_out' : 'checked_in')
+        if (data.history && data.history.length > 0) {
+          const lastAction = data.history[data.history.length - 1].action
+          setStatus(lastAction === 'check-in' ? 'checked_in' : 'not_checked_in')
+        } else {
+          // Fallback legacy support
+          setStatus(data.checkOut ? 'not_checked_in' : (data.checkIn ? 'checked_in' : 'not_checked_in'))
+        }
       }
     } catch (e) {
       console.error('Failed to fetch attendance status')
@@ -107,7 +113,7 @@ const CheckInOutEnhanced = () => {
       const { data } = await attendanceAPI.checkOut()
       toast.success('Successfully Checked Out!')
       setTodayRecord(data)
-      setStatus('checked_out')
+      setStatus('not_checked_in')
     } catch (err) {
       toast.error('Check-out failed')
     } finally {
@@ -240,26 +246,38 @@ const CheckInOutEnhanced = () => {
           <Grid item xs={12}>
              <Typography variant="h6" sx={{ mb: 2, ml: 1 }}>Recent Punch Records</Typography>
              <Card sx={{ borderRadius: 4 }}>
-                <List>
+                 <List>
                    {todayRecord ? (
-                     <>
-                        <ListItem>
-                           <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
-                           <ListItemText primary="Check In" secondary={`${todayRecord.date} at ${todayRecord.checkIn}`} />
-                           <Chip label="Verified" size="small" color="success" variant="outlined" />
-                        </ListItem>
-                        {todayRecord.checkOut && (
-                          <ListItem>
-                             <ListItemIcon><Cancel color="error" /></ListItemIcon>
-                             <ListItemText primary="Check Out" secondary={`${todayRecord.date} at ${todayRecord.checkOut}`} />
-                             <Chip label="Logged" size="small" variant="outlined" />
-                          </ListItem>
-                        )}
-                     </>
+                     todayRecord.history && todayRecord.history.length > 0 ? (
+                       todayRecord.history.map((h, i) => (
+                         <ListItem key={i}>
+                            <ListItemIcon>
+                              {h.action === 'check-in' ? <CheckCircle color="success" /> : <Cancel color="error" />}
+                            </ListItemIcon>
+                            <ListItemText primary={h.action === 'check-in' ? 'Check In' : 'Check Out'} secondary={`${todayRecord.date} at ${h.time}`} />
+                            <Chip label={h.action === 'check-in' ? 'Verified' : 'Logged'} size="small" color={h.action === 'check-in' ? 'success' : 'default'} variant="outlined" />
+                         </ListItem>
+                       ))
+                     ) : (
+                       <>
+                         <ListItem>
+                            <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
+                            <ListItemText primary="Check In" secondary={`${todayRecord.date} at ${todayRecord.checkIn}`} />
+                            <Chip label="Verified" size="small" color="success" variant="outlined" />
+                         </ListItem>
+                         {todayRecord.checkOut && (
+                           <ListItem>
+                              <ListItemIcon><Cancel color="error" /></ListItemIcon>
+                              <ListItemText primary="Check Out" secondary={`${todayRecord.date} at ${todayRecord.checkOut}`} />
+                              <Chip label="Logged" size="small" variant="outlined" />
+                           </ListItem>
+                         )}
+                       </>
+                     )
                    ) : (
                      <ListItem><ListItemText primary="No records found for today" /></ListItem>
                    )}
-                </List>
+                 </List>
              </Card>
           </Grid>
         </Grid>

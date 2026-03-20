@@ -1,241 +1,226 @@
-import React from 'react'
+import React, { useState } from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
   Typography,
+  TextField,
   Button,
-  Container,
-  Avatar,
-  Grid,
-  Paper
-} from '@mui/material'
+  Alert,
+  Tabs,
+  Tab,
+  Box,
+  InputAdornment,
+  IconButton,
+  Link,
+  CircularProgress
+} from '@mui/material';
 import {
-  AdminPanelSettings,
-  People,
+  Visibility,
+  VisibilityOff,
+  Email,
+  Lock,
   Person,
-  Login as LoginIcon,
-  AccessTime
-} from '@mui/icons-material'
+  AdminPanelSettings,
+  People
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import ModernAuthLayout from './ModernAuthLayout';
 
-const LoginPortal = () => {
-  const loginOptions = [
-    {
-      title: 'Admin Login',
-      description: 'System Administrator Access',
-      icon: <AdminPanelSettings sx={{ color: '#FFFFFF', fontSize: 35 }} />,
-      color: '#000000',
-      bgColor: '#FFFFFF',
-      route: '/login/admin',
-      features: ['Full System Control', 'User Management', 'System Settings', 'Reports']
-    },
-    {
-      title: 'HR Login',
-      description: 'Human Resources Portal',
-      icon: <People sx={{ color: '#FFFFFF', fontSize: 35 }} />,
-      color: '#000000',
-      bgColor: '#FFFFFF',
-      route: '/login/hr',
-      features: ['Employee Management', 'Attendance Tracking', 'Performance Reviews', 'Analytics']
-    },
-    {
-      title: 'Employee Login',
-      description: 'Employee Portal',
-      icon: <Person sx={{ color: '#FFFFFF', fontSize: 35 }} />,
-      color: '#000000',
-      bgColor: '#FFFFFF',
-      route: '/login/employee',
-      features: ['Task Management', 'Check In/Out', 'Location Tracking', 'Profile']
+const ROLE_TABS = [
+  { label: 'Employee', _val: 'employee', icon: <Person fontSize="small" /> },
+  { label: 'HR', _val: 'hr', icon: <People fontSize="small" /> },
+  { label: 'Admin', _val: 'admin', icon: <AdminPanelSettings fontSize="small" /> },
+];
+
+export default function LoginPortal() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  
+  const [activeTab, setActiveTab] = useState(0); // 0: employee, 1: hr, 2: admin
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const selectedRole = ROLE_TABS[activeTab]._val;
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await login({ email: formData.email, password: formData.password }, selectedRole);
+      
+      if (!result.success) {
+        setError(result.error || `Invalid ${selectedRole} credentials. Please try again.`);
+        setLoading(false);
+        return;
+      }
+
+      // Successful login route
+      const role = (result.user?.role || '').toLowerCase();
+      const hybrid = result.user?.hybridPermissions;
+      const possessesHybridTarget = hybrid?.roles?.includes(selectedRole);
+
+      // If user logs in physically as employee but selected Admin/HR tab (and possesses hybrid), route there
+      let routeRole = role;
+      if (possessesHybridTarget) routeRole = selectedRole;
+
+      const dashboard =
+        routeRole === 'admin'
+          ? '/dashboard/admin'
+          : routeRole === 'hr'
+            ? '/dashboard/hr'
+            : '/dashboard/employee';
+
+      navigate(dashboard, { replace: true });
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || 'Error communicating with server');
+    } finally {
+      setLoading(false);
     }
-  ]
+  };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      background: '#1B5E20',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      py: 4
-    }}>
-      <Container maxWidth="lg">
-        {/* Header */}
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Avatar sx={{ 
-            bgcolor: 'white', 
-            width: 80, 
-            height: 80, 
-            mx: 'auto', 
-            mb: 3 
-          }}>
-            <LoginIcon sx={{ fontSize: 40, color: '#000000' }} />
-          </Avatar>
-          <Typography variant="h3" color="white" gutterBottom fontWeight="bold">
-            Employee Management System
-          </Typography>
-          <Typography variant="h6" color="white" sx={{ opacity: 0.9 }}>
-            Choose your role to access the system
-          </Typography>
+    <ModernAuthLayout isSignup={false}>
+      <Box sx={{ mb: 4, textAlign: 'center' }}>
+        <Typography variant="h4" fontWeight="800" sx={{ color: '#1a202c', mb: 1 }}>
+          Welcome Back
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Sign in to your account to continue
+        </Typography>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Role Tabs */}
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        variant="fullWidth"
+        centered
+        sx={{
+          mb: 4,
+          minHeight: 48,
+          '& .MuiTabs-indicator': {
+            height: 3,
+            borderRadius: '3px 3px 0 0',
+            backgroundColor: '#00c853'
+          }
+        }}
+      >
+        {ROLE_TABS.map((tab, idx) => (
+          <Tab 
+            key={idx}
+            icon={tab.icon} 
+            iconPosition="start" 
+            label={tab.label} 
+            sx={{ fontWeight: 600, color: '#64748b', '&.Mui-selected': { color: '#00c853' } }} 
+          />
+        ))}
+      </Tabs>
+
+      <form onSubmit={handleSubmit}>
+        <TextField
+          fullWidth
+          required
+          label="Email Address"
+          name="email"
+          type="email"
+          variant="outlined"
+          value={formData.email}
+          onChange={handleChange}
+          sx={{ mb: 3 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Email sx={{ color: '#94a3b8' }} />
+              </InputAdornment>
+            )
+          }}
+        />
+
+        <TextField
+          fullWidth
+          required
+          label="Password"
+          name="password"
+          type={showPassword ? 'text' : 'password'}
+          variant="outlined"
+          value={formData.password}
+          onChange={handleChange}
+          sx={{ mb: 1 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Lock sx={{ color: '#94a3b8' }} />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  {showPassword ? <VisibilityOff sx={{ color: '#94a3b8' }} /> : <Visibility sx={{ color: '#94a3b8' }} />}
+                </IconButton>
+              </InputAdornment>
+            )
+          }}
+        />
+
+        <Box sx={{ textAlign: 'right', mb: 3 }}>
+          <Link href="/forgot-password" variant="body2" sx={{ color: '#00c853', fontWeight: 600, textDecoration: 'none' }}>
+            Forgot Password?
+          </Link>
         </Box>
 
-        {/* Login Options */}
-        <Grid container spacing={4}>
-          {loginOptions.map((option, index) => (
-            <Grid item xs={12} md={4} key={index}>
-              <Card sx={{ 
-                height: '100%',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
-                },
-                borderRadius: 3,
-                overflow: 'hidden'
-              }}>
-                <CardContent sx={{ p: 3 }}>
-                  {/* Icon and Title */}
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <Avatar sx={{ 
-                      bgcolor: option.color, 
-                      width: 70, 
-                      height: 70, 
-                      mx: 'auto', 
-                      mb: 2 
-                    }}>
-                      {option.icon}
-                    </Avatar>
-                    <Typography variant="h5" color={option.color} gutterBottom fontWeight="bold">
-                      {option.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {option.description}
-                    </Typography>
-                  </Box>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          size="large"
+          disabled={loading}
+          sx={{
+            py: 1.5,
+            bgcolor: '#00c853',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: '1rem',
+            textTransform: 'none',
+            borderRadius: 2,
+            boxShadow: '0 4px 14px 0 rgba(0, 200, 83, 0.39)',
+            '&:hover': {
+              bgcolor: '#00a844',
+              boxShadow: '0 6px 20px rgba(0, 200, 83, 0.23)'
+            }
+          }}
+        >
+          {loading ? <CircularProgress size={24} color="inherit" /> : `Sign In as ${ROLE_TABS[activeTab].label}`}
+        </Button>
+      </form>
 
-                  {/* Features */}
-                  <Box sx={{ mb: 3, minHeight: '120px' }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      <strong>Access Features:</strong>
-                    </Typography>
-                    {option.features.map((feature, idx) => (
-                      <Typography variant="caption" color="text.secondary" key={idx} sx={{ display: 'block', mb: 0.5 }}>
-                        • {feature}
-                      </Typography>
-                    ))}
-                  </Box>
-
-                  {/* Login Button */}
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    href={option.route}
-                    sx={{ 
-                      bgcolor: option.color,
-                      color: '#FFFFFF',
-                      '&:hover': { bgcolor: option.color, opacity: 0.9 },
-                      py: 1.5,
-                      fontSize: '16px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Sign In
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Demo Info */}
-        <Box sx={{ mt: 6, textAlign: 'center' }}>
-          <Paper sx={{ 
-            p: 3, 
-            bgcolor: 'rgba(255,255,255,0.1)', 
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.2)'
-          }}>
-            <Typography variant="h6" color="white" gutterBottom>
-              Demo Credentials
-            </Typography>
-            <Grid container spacing={3} justifyContent="center">
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-                  <strong>Admin:</strong><br />
-                  admin@company.com<br />
-                  admin123
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-                  <strong>HR:</strong><br />
-                  hr@company.com<br />
-                  hr123
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-                  <strong>Employee:</strong><br />
-                  mike@company.com<br />
-                  employee123
-                </Typography>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Box>
-
-        {/* Quick Attendance Option */}
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Button
-            variant="outlined"
-            size="large"
-            href="/login/employee"
-            startIcon={<AccessTime />}
-            sx={{
-              color: 'white',
-              borderColor: 'rgba(255,255,255,0.5)',
-              px: 4,
-              py: 1.5,
-              borderRadius: 3,
-              textTransform: 'none',
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              bgcolor: 'rgba(255,255,255,0.05)',
-              '&:hover': {
-                borderColor: 'white',
-                bgcolor: 'rgba(255,255,255,0.15)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.2s'
-            }}
-          >
-            Employee Quick Attendance
-          </Button>
-          <Typography variant="body2" color="white" sx={{ opacity: 0.7, mt: 1 }}>
-            Sign in directly to mark your attendance
-          </Typography>
-        </Box>
-
-        {/* Signup Links */}
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
-            Don't have an account?{' '}
-            <Button 
-              href="/signup" 
-              sx={{ 
-                color: 'white', 
-                textTransform: 'none',
-                textDecoration: 'underline',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-              }}
-            >
-              Sign Up Here
-            </Button>
-          </Typography>
-        </Box>
-      </Container>
-    </Box>
-  )
+      <Box sx={{ mt: 4, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Don't have an account?{' '}
+          <Link href="/signup" sx={{ color: '#00c853', fontWeight: 600, textDecoration: 'none' }}>
+            Create an account
+          </Link>
+        </Typography>
+      </Box>
+    </ModernAuthLayout>
+  );
 }
-
-export default LoginPortal

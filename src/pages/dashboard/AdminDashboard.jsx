@@ -167,32 +167,32 @@ const AdminDashboard = () => {
     {
       title: 'Total Employees',
       value: stats.totalEmployees,
-      icon: <People sx={{ color: 'white' }} />,
-      color: '#1e88e5', // Blue
+      icon: <People sx={{ color: '#00c853' }} />,
+      color: 'rgba(0, 200, 83, 0.12)',
       change: '+12%',
       changeType: 'increase'
     },
     {
       title: 'Present Today',
       value: stats.presentToday,
-      icon: <AccessTime sx={{ color: 'white' }} />,
-      color: '#43a047', // Green
+      icon: <AccessTime sx={{ color: '#00c853' }} />,
+      color: 'rgba(0, 200, 83, 0.12)',
       change: '+5%',
       changeType: 'increase'
     },
     {
       title: 'Active Services',
       value: stats.activeServices,
-      icon: <Assignment sx={{ color: 'white' }} />,
-      color: '#fb8c00', // Orange
+      icon: <Assignment sx={{ color: '#00c853' }} />,
+      color: 'rgba(0, 200, 83, 0.12)',
       change: '+3%',
       changeType: 'increase'
     },
     {
       title: 'Live Locations',
       value: stats.liveLocations,
-      icon: <LocationOn sx={{ color: 'white' }} />,
-      color: '#e53935', // Red
+      icon: <LocationOn sx={{ color: '#00c853' }} />,
+      color: 'rgba(0, 200, 83, 0.12)',
       change: '+2',
       changeType: 'increase'
     }
@@ -399,7 +399,7 @@ const AdminDashboard = () => {
         </Grid>
       )}
 
-      {/* Tables Section */}
+      {/* Pending Admins Approval Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <Card elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2, height: '100%' }}>

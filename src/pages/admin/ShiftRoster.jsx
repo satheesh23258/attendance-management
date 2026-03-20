@@ -69,13 +69,18 @@ const ShiftRoster = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Logic for 7-day window
-      const start = new Date(currentDate);
-      const end = new Date(currentDate);
-      end.setDate(end.getDate() + 6);
+      
+      // Calculate start and end dates directly safely
+      const dStart = new Date(currentDate);
+      const tzOffset = dStart.getTimezoneOffset() * 60000;
+      const startDateStr = new Date(dStart.getTime() - tzOffset).toISOString().split('T')[0];
+      
+      const dEnd = new Date(currentDate);
+      dEnd.setDate(dEnd.getDate() + 6);
+      const endDateStr = new Date(dEnd.getTime() - tzOffset).toISOString().split('T')[0];
       
       const [shiftsRes, empRes] = await Promise.all([
-        shiftAPI.getAll({ start: start.toISOString(), end: end.toISOString() }),
+        shiftAPI.getAll({ start: `${startDateStr}T00:00:00.000Z`, end: `${endDateStr}T23:59:59.999Z` }),
         employeeAPI.getAll()
       ]);
       
@@ -193,74 +198,87 @@ const ShiftRoster = () => {
 
       {/* Roster Grid */}
       <Card sx={{ borderRadius: 6, border: '1px solid #eee', overflow: 'hidden' }} elevation={0}>
-         <Box sx={{ display: 'grid', gridTemplateColumns: '200px repeat(7, 1fr)', bgcolor: '#fafafa', borderBottom: '1px solid #eee' }}>
-            <Box sx={{ p: 2, borderRight: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Groups fontSize="small" color="action" />
-                <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase' }}>Resources</Typography>
-            </Box>
-            {days.map(d => (
-                <Box key={d.toISOString()} sx={{ p: 2, textAlign: 'center', borderRight: '1px solid #eee' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: d.getDay() === 0 ? 'error.main' : 'text.secondary' }}>
-                        {d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</Typography>
+         <Box sx={{ overflowX: 'auto', width: '100%' }}>
+           <Box sx={{ minWidth: 900 }}>
+             <Box sx={{ display: 'grid', gridTemplateColumns: '200px repeat(7, 1fr)', bgcolor: '#fafafa', borderBottom: '1px solid #eee' }}>
+                <Box sx={{ p: 2, borderRight: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Groups fontSize="small" color="action" />
+                    <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase' }}>Resources</Typography>
                 </Box>
-            ))}
-         </Box>
-
-         <Box sx={{ minHeight: '400px', bgcolor: '#fff' }}>
-            {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress size={30} /></Box>
-            ) : employees.length === 0 ? (
-                <Box sx={{ p: 4, textAlign: 'center' }}><Typography color="textSecondary">No employees to display.</Typography></Box>
-            ) : (
-                employees.map(emp => (
-                    <Box key={emp.id} sx={{ display: 'grid', gridTemplateColumns: '200px repeat(7, 1fr)', borderBottom: '1px solid #f9f9f9' }}>
-                        <Box sx={{ p: 2, borderRight: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ width: 32, height: 32, bgcolor: '#f0f0f0', color: '#333', fontSize: '0.8rem' }}>{emp.name.charAt(0)}</Avatar>
-                            <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#000' }}>{emp.name}</Typography>
-                                <Typography variant="caption" sx={{ opacity: 0.6 }}>{emp.role}</Typography>
-                            </Box>
-                        </Box>
-                        {days.map(d => {
-                            const dateStr = d.toISOString().split('T')[0];
-                            const employeeShifts = shifts.filter(s => s.employeeId === emp.id && new Date(s.date).toISOString().split('T')[0] === dateStr);
-                            
-                            return (
-                                <Box key={dateStr} sx={{ p: 1, borderRight: '1px solid #eee', minHeight: '80px', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                    {employeeShifts.map(s => (
-                                        <Tooltip key={s.id} title={`${s.title}: ${s.startTime} - ${s.endTime}`}>
-                                            <Box 
-                                                sx={{ 
-                                                    p: 1, 
-                                                    bgcolor: s.color || '#6366f1', 
-                                                    color: '#fff', 
-                                                    borderRadius: 2, 
-                                                    fontSize: '0.65rem',
-                                                    position: 'relative',
-                                                    '&:hover .delete-btn': { opacity: 1 }
-                                                }}
-                                            >
-                                                <Typography sx={{ fontWeight: 800, fontSize: '0.6rem' }}>{s.startTime}-{s.endTime}</Typography>
-                                                <Typography sx={{ opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</Typography>
-                                                <IconButton 
-                                                    className="delete-btn"
-                                                    size="small" 
-                                                    onClick={() => deleteShift(s.id)}
-                                                    sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'rgba(0,0,0,0.5)', color: '#fff', p: 0.2, opacity: 0, transition: '0.2s' }}
-                                                >
-                                                    <Delete sx={{ fontSize: 10 }} />
-                                                </IconButton>
-                                            </Box>
-                                        </Tooltip>
-                                    ))}
-                                </Box>
-                            );
-                        })}
+                {days.map(d => (
+                    <Box key={d.toISOString()} sx={{ p: 2, textAlign: 'center', borderRight: '1px solid #eee' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: d.getDay() === 0 ? 'error.main' : 'text.secondary' }}>
+                            {d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</Typography>
                     </Box>
-                ))
-            )}
+                ))}
+             </Box>
+
+             <Box sx={{ minHeight: '400px', bgcolor: '#fff' }}>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress size={30} /></Box>
+                ) : employees.length === 0 ? (
+                    <Box sx={{ p: 4, textAlign: 'center' }}><Typography color="textSecondary">No employees to display.</Typography></Box>
+                ) : (
+                    employees.map(emp => {
+                        const empId = emp._id || emp.id;
+                        return (
+                        <Box key={empId} sx={{ display: 'grid', gridTemplateColumns: '200px repeat(7, 1fr)', borderBottom: '1px solid #f9f9f9' }}>
+                            <Box sx={{ p: 2, borderRight: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Avatar sx={{ width: 32, height: 32, bgcolor: '#f0f0f0', color: '#333', fontSize: '0.8rem' }}>{emp.name.charAt(0)}</Avatar>
+                                <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#000' }}>{emp.name}</Typography>
+                                    <Typography variant="caption" sx={{ opacity: 0.6 }}>{emp.role}</Typography>
+                                </Box>
+                            </Box>
+                            {days.map(d => {
+                                // Add timezone safe ISO split for date matching
+                                const dTime = new Date(d);
+                                const dateStr = new Date(dTime.getTime() - (dTime.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                                
+                                const employeeShifts = shifts.filter(s => {
+                                   if (!s.date) return false;
+                                   const shiftDateStr = s.date.split('T')[0].substring(0, 10);
+                                   return String(s.employeeId) === String(empId) && shiftDateStr === dateStr;
+                                });
+                                
+                                return (
+                                    <Box key={dateStr} sx={{ p: 1, borderRight: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                        {employeeShifts.map(s => (
+                                            <Tooltip key={s._id || s.id} title={`${s.title || 'Shift'}: ${s.startTime} - ${s.endTime}`}>
+                                                <Box 
+                                                    sx={{ 
+                                                        p: 1, 
+                                                        bgcolor: s.color || '#6366f1', 
+                                                        color: '#fff', 
+                                                        borderRadius: 2, 
+                                                        fontSize: '0.65rem',
+                                                        position: 'relative',
+                                                        '&:hover .delete-btn': { opacity: 1 }
+                                                    }}
+                                                >
+                                                    <Typography sx={{ fontWeight: 800, fontSize: '0.6rem' }}>{s.startTime}-{s.endTime}</Typography>
+                                                    <Typography sx={{ opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title || 'Shift'}</Typography>
+                                                    <IconButton 
+                                                        className="delete-btn"
+                                                        size="small" 
+                                                        onClick={() => deleteShift(s._id || s.id)}
+                                                        sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'rgba(0,0,0,0.5)', color: '#fff', p: 0.2, opacity: 0, transition: '0.2s' }}
+                                                    >
+                                                        <Delete sx={{ fontSize: 10 }} />
+                                                    </IconButton>
+                                                </Box>
+                                            </Tooltip>
+                                        ))}
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    )})
+                )}
+             </Box>
+           </Box>
          </Box>
       </Card>
 

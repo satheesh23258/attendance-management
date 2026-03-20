@@ -11,7 +11,7 @@
     "setup": "node scripts/setup.js",
     "server": "npm run setup && npm start --prefix server",
     "server:dev": "npm run setup && npm run dev --prefix server",
-    "dev:all": "npm run setup && concurrently \"npm run dev\" \"npm run server\""
+    "dev:all": "npm run setup && concurrently \"npm run dev\" \"npm run server:dev\""
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",

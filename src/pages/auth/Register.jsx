@@ -128,12 +128,7 @@ const Register = () => {
         department: formData.department,
         phone: formData.phone,
       })
-      // If backend created user and sent OTP, navigate to verify page
-      const userId = res.data?.user?.id
-      if (userId) {
-        navigate('/verify-otp', { state: { userId, phone: formData.phone, purpose: 'verify_phone' } })
-        return
-      }
+      // Phone verification is no longer required, redirect directly to login
       alert('Registration successful! Please login with your credentials.')
       navigate('/login')
     } catch (error) {

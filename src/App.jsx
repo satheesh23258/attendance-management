@@ -39,6 +39,7 @@ const SupportCenter      = lazy(() => import("./pages/support/SupportCenter"));
 
 // Admin pages
 const ManageEmployees        = lazy(() => import("./pages/admin/ManageEmployees"));
+const EmployeeDetails        = lazy(() => import("./pages/admin/EmployeeDetails"));
 const SystemSettings         = lazy(() => import("./pages/admin/SystemSettings"));
 const UserManagement         = lazy(() => import("./pages/admin/UserManagement"));
 const HybridPermissions      = lazy(() => import("./pages/admin/HybridPermissions"));
@@ -61,6 +62,12 @@ const AttendanceReports = lazy(() => import("./pages/hr/AttendanceReports"));
 const Analytics        = lazy(() => import("./pages/hr/Analytics"));
 const ClaimApprovals   = lazy(() => import("./pages/hr/ClaimApprovals"));
 const HRAttendance     = lazy(() => import("./pages/attendance/HRAttendance"));
+
+// New shared attendance reports
+const DailyAttendance = lazy(() => import("./pages/attendance/DailyAttendance"));
+const WeekWiseReport = lazy(() => import("./pages/attendance/WeekWiseReport"));
+const ConsolidatedReport = lazy(() => import("./pages/attendance/ConsolidatedReport"));
+const CourseWiseReport = lazy(() => import("./pages/attendance/CourseWiseReport"));
 
 // Leave pages
 const LeaveApplication  = lazy(() => import("./pages/leave/LeaveApplication"));
@@ -147,6 +154,13 @@ function App() {
           <Route element={<Outlet />}>
             {/* Employee */}
             <Route path="/employee/mytasks"          element={<MyTasks />} />
+            
+            {/* New Shared Attendance Routes */}
+            <Route path="/attendance/daily"          element={<DailyAttendance />} />
+            <Route path="/attendance/week-wise"      element={<WeekWiseReport />} />
+            <Route path="/attendance/consolidated"   element={<ConsolidatedReport />} />
+            <Route path="/attendance/course-wise"    element={<CourseWiseReport />} />
+
             <Route path="/employee/checkinout"       element={<CheckInOutEnhanced />} />
             <Route path="/employee/mylocation"       element={<MyLocation />} />
             <Route path="/employee/myprofile"        element={<MyProfileEnhanced />} />
@@ -162,7 +176,9 @@ function App() {
             <Route path="/employee/notifications"    element={<NotificationsPage />} />
 
             {/* Admin */}
+            <Route path="/admin/attendance-management" element={<AdminRoute><HRAttendance /></AdminRoute>} />
             <Route path="/admin/manage-employees"    element={<AdminRoute><ManageEmployees /></AdminRoute>} />
+            <Route path="/admin/employee/:id"        element={<AdminRoute><EmployeeDetails /></AdminRoute>} />
             <Route path="/admin/employees"           element={<AdminRoute><EmployeeList /></AdminRoute>} />
             <Route path="/admin/employees/new"       element={<AdminRoute><EmployeeForm /></AdminRoute>} />
             <Route path="/admin/employees/edit/:id"  element={<AdminRoute><EmployeeForm /></AdminRoute>} />
@@ -174,7 +190,7 @@ function App() {
             <Route path="/admin/shift-roster"        element={<AdminRoute><ShiftRoster /></AdminRoute>} />
             <Route path="/admin/payroll"             element={<AdminRoute><PayrollManagement /></AdminRoute>} />
             <Route path="/admin/hybrid-permissions"  element={<AdminRoute><HybridPermissions /></AdminRoute>} />
-            <Route path="/admin/manage-permissions"  element={<AdminRoute><ManagePermissions /></AdminRoute>} />
+            <Route path="/admin/manage-permissions"  element={<HRRoute><ManagePermissions /></HRRoute>} />
             <Route path="/admin/notifications"       element={<AdminRoute><ManageNotifications /></AdminRoute>} />
             <Route path="/admin/services"            element={<AdminRoute><AdminServiceManagement /></AdminRoute>} />
             <Route path="/admin/services/new"        element={<AdminRoute><ServiceForm /></AdminRoute>} />

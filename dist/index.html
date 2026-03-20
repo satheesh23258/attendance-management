@@ -8,8 +8,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-DsxtmvSQ.js"></script>
-  </head>
+    <style>
+      .gm-err-container { display: none !important; z-index: -9999 !important; }
+      .gm-err-content { display: none !important; }
+      .gm-err-message { display: none !important; }
+      .gm-style-cc { display: none !important; }
+    </style>
+    <script>
+      window.gm_authFailure = function() {
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.innerHTML = '.gm-err-container { display: none !important; }';
+        document.head.appendChild(style);
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-DnN4zRQy.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
     <div id="root"></div>
   </body>

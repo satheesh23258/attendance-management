@@ -18,8 +18,10 @@ import {
   MenuItem,
   Badge,
   Tooltip,
-  InputBase
+  InputBase,
+  useMediaQuery
 } from '@mui/material'
+import { useTheme as useMuiTheme } from '@mui/material/styles'
 import {
   Menu as MenuIcon,
   Dashboard,
@@ -52,12 +54,19 @@ import { useEffect } from 'react'
 const drawerWidth = 240
 
 const MainLayout = ({ children }) => {
-  const [open, setOpen] = useState(true)
+  const muiTheme = useMuiTheme()
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'))
+  const [open, setOpen] = useState(!isMobile)
+  const [openSubmenu, setOpenSubmenu] = useState('')
   const [anchorEl, setAnchorEl] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+
+  useEffect(() => {
+    setOpen(!isMobile)
+  }, [isMobile])
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -160,6 +169,7 @@ const MainLayout = ({ children }) => {
     if (hasHRAccess) {
       items.push(
         { text: 'Employee Records', icon: <People />, path: '/hr/employee-records' },
+        { text: 'Manage Hybrid Permissions', icon: <Security />, path: '/admin/manage-permissions' },
         { text: 'Attendance Reports', icon: <Assignment />, path: '/hr/attendance-reports' },
         { text: 'Attendance Management', icon: <AccessTime />, path: '/hr/attendance-management' },
         { text: 'Live Tracking', icon: <LocationOn />, path: '/location/tracking' },
@@ -185,6 +195,7 @@ const MainLayout = ({ children }) => {
       )
     }
 
+
     items.push(
       { text: 'Notifications', icon: <Notifications />, path: '/notifications' }
     )
@@ -192,18 +203,27 @@ const MainLayout = ({ children }) => {
     return items
   }
 
+  const handleSubmenuToggle = (title) => {
+      if (openSubmenu === title) {
+          setOpenSubmenu('')
+      } else {
+          setOpenSubmenu(title)
+      }
+  }
+
   return (
-    <Box sx={{ display: 'flex', bgcolor: '#f5f5f9', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
       <AppBar
         position="fixed"
         elevation={0}
         sx={{
-          width: open ? `calc(100% - ${drawerWidth}px)` : '100%',
-          ml: open ? `${drawerWidth}px` : 0,
+          width: !isMobile && open ? `calc(100% - ${drawerWidth}px)` : '100%',
+          ml: !isMobile && open ? `${drawerWidth}px` : 0,
           transition: 'width 0.3s, margin 0.3s',
-          backgroundColor: '#FFFFFF',
-          color: '#333333',
-          borderBottom: '1px solid #e0e0e0',
+          backgroundColor: 'background.paper',
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
           boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
         }}
       >
@@ -213,7 +233,7 @@ const MainLayout = ({ children }) => {
             aria-label="open drawer"
             onClick={handleDrawerToggle}
             edge="start"
-            sx={{ mr: 2, display: open ? 'none' : 'block' }}
+            sx={{ mr: 2, display: (!isMobile && open) ? 'none' : 'block' }}
           >
             <MenuIcon />
           </IconButton>
@@ -234,7 +254,7 @@ const MainLayout = ({ children }) => {
             <IconButton
               color="inherit"
               onClick={handleProfileMenuOpen}
-              sx={{ p: 0.5, border: '1px solid #e0e0e0' }}
+              sx={{ p: 0.5, border: '1px solid', borderColor: 'divider' }}
             >
               <Avatar
                 src={user?.avatar}
@@ -291,17 +311,23 @@ const MainLayout = ({ children }) => {
             boxShadow: '2px 0 8px rgba(0,0,0,0.05)'
           },
         }}
-        variant="persistent"
+        variant={isMobile ? "temporary" : "persistent"}
         anchor="left"
         open={open}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
       >
         <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, bgcolor: '#232536' }}>
           <IconButton onClick={() => navigate(-1)} sx={{ color: '#c2c4d1', bgcolor: 'rgba(255,255,255,0.05)', borderRadius: '50%', p: 1 }}>
             <ArrowBack sx={{ fontSize: 20 }} />
           </IconButton>
-          <IconButton onClick={handleDrawerToggle} sx={{ color: '#c2c4d1' }}>
-            <MenuIcon />
-          </IconButton>
+          {isMobile && (
+            <IconButton onClick={handleDrawerToggle} sx={{ color: '#c2c4d1' }}>
+              <MenuIcon />
+            </IconButton>
+          )}
         </Toolbar>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
 
@@ -341,7 +367,10 @@ const MainLayout = ({ children }) => {
 
         <List sx={{ px: 1, py: 2 }}>
           {getMenuItems().map((item) => {
-            const isSelected = location.pathname === item.path;
+            const hasSub = !!item.subItems;
+            const isSubOpen = openSubmenu === item.text;
+            const isSelected = item.path ? location.pathname === item.path : false;
+            
             const itemBgColor = isSelected 
               ? (user?.role === 'employee' ? '#00c853' : '#7367f0') 
               : 'transparent';
@@ -350,51 +379,90 @@ const MainLayout = ({ children }) => {
               : 'none';
 
             return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  selected={isSelected}
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    borderRadius: '8px',
-                    color: isSelected ? '#ffffff' : '#c2c4d1',
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      color: '#ffffff',
+              <React.Fragment key={item.text}>
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    selected={isSelected}
+                    onClick={() => hasSub ? handleSubmenuToggle(item.text) : navigate(item.path)}
+                    sx={{
+                      borderRadius: '8px',
+                      color: isSelected ? '#ffffff' : '#c2c4d1',
+                      '&.Mui-selected': {
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        color: '#ffffff',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255,255,255,0.1)'
+                        }
+                      },
                       '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.1)'
+                        backgroundColor: 'rgba(255,255,255,0.02)'
                       }
-                    },
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.02)'
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{
-                    color: isSelected ? '#ffffff' : '#c2c4d1',
-                    minWidth: 40,
-                    bgcolor: itemBgColor,
-                    p: isSelected ? 0.6 : 0,
-                    borderRadius: isSelected ? 1.5 : 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: isSelected ? 32 : 'auto',
-                    height: isSelected ? 32 : 'auto',
-                    mr: isSelected ? 1.5 : 2,
-                    boxShadow: itemShadow
-                  }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: '0.9rem',
-                      fontWeight: isSelected ? 600 : 400,
-                      color: isSelected ? '#ffffff' : '#c2c4d1'
                     }}
-                  />
-                </ListItemButton>
-              </ListItem>
+                  >
+                    <ListItemIcon sx={{
+                      color: isSelected ? '#ffffff' : '#c2c4d1',
+                      minWidth: 40,
+                      bgcolor: itemBgColor,
+                      p: isSelected ? 0.6 : 0,
+                      borderRadius: isSelected ? 1.5 : 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: isSelected ? 32 : 'auto',
+                      height: isSelected ? 32 : 'auto',
+                      mr: isSelected ? 1.5 : 2,
+                      boxShadow: itemShadow
+                    }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: '0.9rem',
+                        fontWeight: isSelected ? 600 : 400,
+                        color: isSelected ? '#ffffff' : '#c2c4d1'
+                      }}
+                    />
+                    {hasSub && (
+                        <Box sx={{ transform: isSubOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: '0.2s', display: 'flex' }}>
+                            <ChevronLeft fontSize="small" />
+                        </Box>
+                    )}
+                  </ListItemButton>
+                </ListItem>
+                {hasSub && (
+                    <Collapse in={isSubOpen} timeout="auto" unmountOnExit>
+                       <List component="div" disablePadding>
+                          {item.subItems.map(subItem => {
+                              const isSubSelected = location.pathname === subItem.path;
+                              return (
+                                  <ListItemButton
+                                      key={subItem.text}
+                                      onClick={() => navigate(subItem.path)}
+                                      sx={{
+                                          pl: 6,
+                                          py: 0.5,
+                                          mb: 0.5,
+                                          borderRadius: '8px',
+                                          color: isSubSelected ? '#fff' : '#a1a3b1',
+                                          bgcolor: isSubSelected ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                          '&:hover': { bgcolor: 'rgba(255,255,255,0.02)', color: '#fff' }
+                                      }}
+                                  >
+                                      <ListItemIcon sx={{ minWidth: 32, mr: 0, color: 'inherit' }}>
+                                          <Assignment sx={{ fontSize: 16 }} />
+                                      </ListItemIcon>
+                                      <ListItemText 
+                                          primary={subItem.text} 
+                                          primaryTypographyProps={{ fontSize: '0.85rem' }} 
+                                      />
+                                  </ListItemButton>
+                              )
+                          })}
+                       </List>
+                    </Collapse>
+                )}
+              </React.Fragment>
             )
           })}
         </List>
@@ -404,7 +472,7 @@ const MainLayout = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: open ? `calc(100% - ${drawerWidth}px)` : '100%',
+          width: !isMobile && open ? `calc(100% - ${drawerWidth}px)` : '100%',
           transition: 'width 0.3s'
         }}
       >

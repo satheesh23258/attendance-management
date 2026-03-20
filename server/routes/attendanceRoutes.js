@@ -53,11 +53,19 @@ router.post('/check-in', auth, async (req, res) => {
     }
 
     const checkInTime = now.toTimeString().slice(0, 8);
-    const status = now.getHours() < 9 || (now.getHours() === 9 && now.getMinutes() === 0) ? 'present' : 'late';
+    let status = now.getHours() < 9 || (now.getHours() === 9 && now.getMinutes() === 0) ? 'present' : 'late';
 
-    const record = await Attendance.findOneAndUpdate(
-      { employeeId: employee._id, date },
-      {
+    let record = await Attendance.findOne({ employeeId: employee._id, date });
+    
+    if (record) {
+      record.history.push({ action: 'check-in', time: checkInTime, timestamp: now });
+      record.location = { lat, lng, address: employee.isRemote ? 'Remote' : 'Office' };
+      // Do not overwrite initial check-in time if it exists
+      if (!record.checkIn) record.checkIn = checkInTime;
+      record.status = record.status || status;
+      await record.save();
+    } else {
+      record = await Attendance.create({
         employeeId: employee._id,
         employeeName: employee.name,
         date,
@@ -66,9 +74,9 @@ router.post('/check-in', auth, async (req, res) => {
         location: { lat, lng, address: employee.isRemote ? 'Remote' : 'Office' },
         markedBy: req.user._id,
         markedByName: req.user.name,
-      },
-      { upsert: true, new: true }
-    );
+        history: [{ action: 'check-in', time: checkInTime, timestamp: now }]
+      });
+    }
 
     // Sync Live Location
     await Location.findOneAndUpdate(
@@ -94,7 +102,10 @@ router.post('/check-in', auth, async (req, res) => {
 router.post('/mark', auth, async (req, res) => {
 
   try {
-    const { employeeId, status, date, checkIn, checkOut, location } = req.body;
+    let { employeeId, status, date, checkIn, checkOut, location } = req.body;
+    if (!date) {
+      date = new Date().toISOString().split('T')[0];
+    }
 
     // 1. Permission Check
     let hasPermission = req.user.role === 'admin' || req.user.role === 'hr';
@@ -120,6 +131,13 @@ router.post('/mark', auth, async (req, res) => {
     const targetEmployee = await Employee.findById(employeeId);
     if (!targetEmployee) return res.status(404).json({ message: 'Target employee not found' });
 
+    let defaultCheckIn = '';
+    if (status === 'present' || status === 'late') {
+        const now = new Date();
+        // Shift time by IST if necessary or just use server time
+        defaultCheckIn = now.toTimeString().slice(0, 8);
+    }
+
     // 3. Create/Update attendance
     const record = await Attendance.findOneAndUpdate(
       { employeeId, date },
@@ -127,7 +145,7 @@ router.post('/mark', auth, async (req, res) => {
         employeeId,
         employeeName: targetEmployee.name,
         date,
-        checkIn: checkIn || '09:00:00',
+        checkIn: checkIn || defaultCheckIn,
         checkOut: checkOut || '',
         status: status || 'present',
         location: location || { address: 'Manual Entry' },
@@ -136,6 +154,27 @@ router.post('/mark', auth, async (req, res) => {
       },
       { upsert: true, new: true }
     );
+
+    // Sync Live Location map so they show up for admins
+    if (status === 'present' || status === 'late') {
+      await Location.findOneAndUpdate(
+        { employeeId },
+        {
+          employeeId,
+          employeeName: targetEmployee.name,
+          latitude: targetEmployee.officeLocation?.lat || targetEmployee.location?.lat || 11.1085,
+          longitude: targetEmployee.officeLocation?.lng || targetEmployee.location?.lng || 77.3411,
+          address: targetEmployee.branchLocation || 'Office',
+          isActive: true
+        },
+        { upsert: true, new: true }
+      );
+    } else {
+      await Location.findOneAndUpdate(
+        { employeeId },
+        { isActive: false }
+      );
+    }
 
     res.json(record);
   } catch (error) {
@@ -153,6 +192,8 @@ router.post('/check-out', auth, async (req, res) => {
       const record = await Attendance.findOne({ employeeId: employee._id, date });
       if (!record) return res.status(400).json({ message: 'Check-in first' });
       record.checkOut = now.toTimeString().slice(0, 8);
+      if (!record.history) record.history = [];
+      record.history.push({ action: 'check-out', time: record.checkOut, timestamp: now });
       await record.save();
 
       // Sync Live Location - Mark as Inactive
@@ -167,7 +208,8 @@ router.post('/check-out', auth, async (req, res) => {
 
 router.get('/history', auth, async (req, res) => {
   try {
-    const attendance = await Attendance.find().sort({ date: -1 });
+    const filter = req.query.employeeId ? { employeeId: req.query.employeeId } : {};
+    const attendance = await Attendance.find(filter).sort({ date: -1 });
     res.json(attendance);
   } catch (error) { res.status(500).json({ message: error.message }); }
 });

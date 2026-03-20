@@ -17,7 +17,9 @@ import {
   Logout,
   AdminPanelSettings,
   People,
-  Badge
+  Badge,
+  DarkMode,
+  LightMode
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
@@ -26,7 +28,7 @@ import { useTheme } from '../contexts/ThemeContext'
 const UserProfile = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const { colors } = useTheme()
+  const { colors, mode, toggleColorMode } = useTheme()
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
 
@@ -209,6 +211,13 @@ const UserProfile = () => {
             <Settings fontSize="small" />
           </ListItemIcon>
           <ListItemText>Settings</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={toggleColorMode}>
+          <ListItemIcon>
+            {mode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
+          </ListItemIcon>
+          <ListItemText>{mode === 'dark' ? 'Light Mode' : 'Dark Mode'}</ListItemText>
         </MenuItem>
 
         <Divider sx={{ my: 1 }} />

@@ -42,7 +42,7 @@ const uniformRoleTheme = {
     contrastText: '#ffffff'
   },
   background: {
-    default: '#ffffff', // pure white background
+    default: '#f4f7f9', // pure white background (softened for default)
     paper: '#ffffff' // pure white paper
   },
   header: {
@@ -59,126 +59,71 @@ const roleThemes = {
 }
 
 export const RoleThemeProvider = ({ children, role }) => {
-  const theme = useMemo(() => {
-    const roleTheme = roleThemes[role] || roleThemes.employee
+  // Check local storage for theme preference, default to light
+  const [mode, setMode] = React.useState(localStorage.getItem('themeMode') || 'light')
 
-    // Minimal theme to avoid MUI conflicts
+  const toggleColorMode = React.useCallback(() => {
+    setMode((prevMode) => {
+      const newMode = prevMode === 'light' ? 'dark' : 'light'
+      localStorage.setItem('themeMode', newMode)
+      return newMode
+    })
+  }, [])
+
+  const setExactThemeMode = React.useCallback((newMode) => {
+    if (newMode === 'system') {
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        newMode = isSystemDark ? 'dark' : 'light';
+    }
+    setMode(newMode)
+    localStorage.setItem('themeMode', newMode)
+  }, [])
+
+  const theme = useMemo(() => {
+    const isDark = mode === 'dark'
+    const roleColors = roleThemes[role] || roleThemes.employee
+
     return createTheme({
       palette: {
-        primary: roleTheme.primary,
-        secondary: roleTheme.secondary,
-        background: roleTheme.background,
-        mode: 'light'
+        mode,
+        primary: roleColors.primary,
+        secondary: roleColors.secondary,
+        background: {
+          default: isDark ? '#121212' : '#f4f7f9',
+          paper: isDark ? '#1e1e1e' : '#ffffff'
+        },
       },
       typography: {
         fontFamily: '"Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        h4: {
-          fontWeight: 700,
-          fontSize: '2rem',
-          lineHeight: 1.2,
-          letterSpacing: '-0.02em'
-        },
-        h5: {
-          fontWeight: 600,
-          fontSize: '1.5rem',
-          letterSpacing: '-0.01em'
-        },
-        h6: {
-          fontWeight: 600,
-          fontSize: '1.15rem',
-          lineHeight: 1.4,
-          letterSpacing: '-0.01em'
-        },
-        body1: {
-          fontWeight: 400,
-          fontSize: '0.95rem',
-          lineHeight: 1.6
-        },
-        button: {
-          fontWeight: 600,
-          textTransform: 'none',
-        }
+        button: { textTransform: 'none', fontWeight: 600 }
       },
       components: {
         MuiCssBaseline: {
           styleOverrides: {
             body: {
-              backgroundColor: '#f4f7f9',
               transition: 'all 0.3s ease-in-out',
             },
-            '*::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '*::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '10px',
-            },
-            '*::-webkit-scrollbar-thumb': {
-              background: '#c1c1c1',
-              borderRadius: '10px',
-            },
-            '*::-webkit-scrollbar-thumb:hover': {
-              background: '#a8a8a8',
-            },
-          }
-        },
-        MuiButton: {
-          styleOverrides: {
-            root: {
-              textTransform: 'none',
-              borderRadius: 12,
-              fontWeight: 600,
-              padding: '10px 24px',
-              fontSize: '0.95rem',
-              background: 'transparent',
-              color: '#000000',
-              border: '2px solid #00c853',
-              boxShadow: 'none',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                background: 'rgba(0, 200, 83, 0.1)',
-              },
-              '&:active': {
-                transform: 'translateY(0)',
-              }
-            },
-            contained: {
-              background: 'transparent',
-              color: '#000000',
-              border: '2px solid #000000',
-              boxShadow: 'none',
-              '&:hover': {
-                background: 'rgba(0, 0, 0, 0.05)',
-              }
-            }
+            '*::-webkit-scrollbar': { width: '8px', height: '8px' },
+            '*::-webkit-scrollbar-track': { background: isDark ? '#2c2c2c' : '#f1f1f1', borderRadius: '10px' },
+            '*::-webkit-scrollbar-thumb': { background: isDark ? '#555' : '#c1c1c1', borderRadius: '10px' },
+            '*::-webkit-scrollbar-thumb:hover': { background: isDark ? '#777' : '#a8a8a8' },
           }
         },
         MuiCard: {
           styleOverrides: {
             root: {
               borderRadius: 20,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-              border: '1px solid rgba(255,255,255,1)',
-              background: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(10px)',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 12px 28px rgba(0,0,0,0.08)',
-              }
+              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.5)' : '0 4px 20px rgba(0,0,0,0.03)',
+              background: isDark ? '#1e1e1e' : '#ffffff',
+              border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
             }
           }
         },
-        MuiPaper: {
+        MuiButton: {
           styleOverrides: {
-            vertical: {
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-            },
-            rounded: {
-              borderRadius: 20,
+            root: {
+              borderRadius: 12,
+              padding: '10px 24px',
             }
           }
         },
@@ -187,77 +132,25 @@ export const RoleThemeProvider = ({ children, role }) => {
             root: {
               '& .MuiOutlinedInput-root': {
                 borderRadius: 14,
-                backgroundColor: '#f8fafc',
-                transition: 'all 0.2s ease',
-                '& fieldset': {
-                  borderColor: '#e2e8f0',
-                  borderWidth: '1.5px',
-                },
-                '&:hover fieldset': {
-                  borderColor: roleTheme.primary.light,
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: roleTheme.primary.main,
-                  borderWidth: '2px',
-                },
-                '&.Mui-focused': {
-                  backgroundColor: '#ffffff',
-                  boxShadow: `0 0 0 4px ${roleTheme.primary.main}1A`,
-                }
+                backgroundColor: isDark ? '#2c2c2c' : '#f8fafc',
               }
             }
           }
         },
         MuiTableCell: {
           styleOverrides: {
-            root: {
-              borderBottom: '1px solid #f1f5f9',
-              padding: '16px',
-            },
             head: {
-              backgroundColor: '#f8fafc',
+              backgroundColor: isDark ? '#2c2c2c' : '#f8fafc',
               fontWeight: 700,
-              color: '#334155',
-              borderBottom: '2px solid #e2e8f0',
-              textTransform: 'uppercase',
-              fontSize: '0.75rem',
-              letterSpacing: '0.05em',
-            }
-          }
-        },
-        MuiAvatar: {
-          styleOverrides: {
-            root: {
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-              border: '2px solid #00c853',
-              background: '#ffffff',
-              color: '#000000'
-            }
-          }
-        },
-        MuiAppBar: {
-          styleOverrides: {
-            root: {
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-              borderBottom: '2px solid #000000',
-              background: '#ffffff',
-              color: '#000000'
-            }
-          }
-        },
-        MuiTypography: {
-          styleOverrides: {
-            root: {
-              color: '#000000'
             }
           }
         }
       }
     })
-  }, [role])
+  }, [role, mode])
 
   return (
-    <ThemeContext.Provider value={{ theme, role, colors: roleThemes[role] || roleThemes.employee }}>
+    <ThemeContext.Provider value={{ theme, role, mode, toggleColorMode, setExactThemeMode, colors: roleThemes[role] || roleThemes.employee }}>
       <ThemeProvider theme={theme}>
         {children}
       </ThemeProvider>

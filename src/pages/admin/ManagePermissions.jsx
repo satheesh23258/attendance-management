@@ -21,7 +21,10 @@ import {
     Select,
     MenuItem,
     IconButton,
-    Alert
+    Alert,
+    FormControlLabel,
+    Checkbox,
+    FormGroup
 } from '@mui/material'
 import { CheckCircle, Cancel, Edit, ArrowBack } from '@mui/icons-material'
 import { employeeAPI, hybridPermissionAPI } from '../../services/api'
@@ -36,6 +39,13 @@ const ManagePermissions = () => {
     const [openDialog, setOpenDialog] = useState(false)
     const [selectedEmployee, setSelectedEmployee] = useState(null)
     const [hybridRole, setHybridRole] = useState('hr') // Default to granting HR access
+    const [customPermissions, setCustomPermissions] = useState({
+        canAccessHR: false,
+        canAccessEmployee: false,
+        canViewReports: false,
+        canManageAttendance: false,
+        canManageLeaves: false
+    })
     const [hybridPermissionsMap, setHybridPermissionsMap] = useState({})
     const { user } = useAuth()
     const navigate = useNavigate()
@@ -79,20 +89,25 @@ const ManagePermissions = () => {
     const handleGrantPermission = async () => {
         try {
             const isAttendanceOnly = hybridRole === 'attendance';
+            const isCustom = hybridRole === 'custom';
             
+            const permissionsPayload = isCustom ? customPermissions : {
+                canAccessHR: !isAttendanceOnly,
+                canAccessEmployee: true,
+                canViewReports: !isAttendanceOnly,
+                canManageAttendance: true,
+                canManageLeaves: !isAttendanceOnly
+            };
+
+            const notesPayload = isCustom 
+                ? 'Granted Custom Hybrid Access'
+                : (isAttendanceOnly ? 'Granted Attendance-Only Access' : 'Granted Full HR Hybrid Access');
+
             // API call to grant permission 
             await hybridPermissionAPI.grant({
                 employeeId: selectedEmployee.id || selectedEmployee._id,
-                permissions: {
-                    canAccessHR: !isAttendanceOnly,
-                    canAccessEmployee: true,
-                    canViewReports: !isAttendanceOnly,
-                    canManageAttendance: true,
-                    canManageLeaves: !isAttendanceOnly
-                },
-                notes: isAttendanceOnly 
-                    ? 'Granted Attendance-Only Access' 
-                    : 'Granted Full HR Hybrid Access'
+                permissions: permissionsPayload,
+                notes: notesPayload
             })
 
             toast.success(`${isAttendanceOnly ? 'Attendance access' : 'Hybrid permission'} granted to ${selectedEmployee.name}`)
@@ -131,6 +146,14 @@ const ManagePermissions = () => {
 
     const openGrantDialog = (employee) => {
         setSelectedEmployee(employee)
+        setHybridRole('hr')
+        setCustomPermissions({
+            canAccessHR: false,
+            canAccessEmployee: true,
+            canViewReports: false,
+            canManageAttendance: false,
+            canManageLeaves: false
+        })
         setOpenDialog(true)
     }
 
@@ -170,7 +193,7 @@ const ManagePermissions = () => {
                 <Box sx={{ p: 3 }}>
 
             <Alert severity="info" sx={{ mb: 3 }}>
-                Grant "Hybrid" access to employees, allowing them to switch between Employee and HR views.
+                Grant &quot;Hybrid&quot; access to employees, allowing them to switch between Employee and HR views.
             </Alert>
 
             <TableContainer component={Card}>
@@ -228,15 +251,17 @@ const ManagePermissions = () => {
 
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
                 <DialogTitle>
-                    {hybridRole === 'attendance' ? 'Grant Attendance Access' : 'Grant Hybrid Access'}
+                    {hybridRole === 'attendance' ? 'Grant Attendance Access' : hybridRole === 'custom' ? 'Custom Permissions Setup' : 'Grant Hybrid Access'}
                 </DialogTitle>
                 <DialogContent>
                     <Typography sx={{ mb: 2 }}>
                         {hybridRole === 'attendance' 
                             ? `Allow ${selectedEmployee?.name} to mark attendance and manage records?`
-                            : `Allow ${selectedEmployee?.name} to access HR functionalities?`}
+                            : hybridRole === 'custom' 
+                                ? `Checking the allowed permissions for ${selectedEmployee?.name}:` 
+                                : `Allow ${selectedEmployee?.name} to access HR functionalities?`}
                     </Typography>
-                    <FormControl fullWidth>
+                    <FormControl fullWidth sx={{ mb: hybridRole === 'custom' ? 2 : 0 }}>
                         <InputLabel>Permission Type</InputLabel>
                         <Select
                             value={hybridRole}
@@ -245,8 +270,37 @@ const ManagePermissions = () => {
                         >
                             <MenuItem value="hr">HR (Human Resources)</MenuItem>
                             <MenuItem value="attendance">Attendance Access</MenuItem>
+                            <MenuItem value="custom">Custom Configured Access</MenuItem>
                         </Select>
                     </FormControl>
+                    
+                    {hybridRole === 'custom' && (
+                        <Card variant="outlined" sx={{ p: 2, bgcolor: '#fbfbfb' }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Select Permissions:</Typography>
+                            <FormGroup>
+                                <FormControlLabel 
+                                    control={<Checkbox checked={customPermissions.canAccessHR} onChange={(e) => setCustomPermissions({...customPermissions, canAccessHR: e.target.checked})} />} 
+                                    label="Access Core HR Dashboard" 
+                                />
+                                <FormControlLabel 
+                                    control={<Checkbox checked={customPermissions.canAccessEmployee} onChange={(e) => setCustomPermissions({...customPermissions, canAccessEmployee: e.target.checked})} />} 
+                                    label="Access Employee Profiles" 
+                                />
+                                <FormControlLabel 
+                                    control={<Checkbox checked={customPermissions.canViewReports} onChange={(e) => setCustomPermissions({...customPermissions, canViewReports: e.target.checked})} />} 
+                                    label="View Analytical Reports" 
+                                />
+                                <FormControlLabel 
+                                    control={<Checkbox checked={customPermissions.canManageAttendance} onChange={(e) => setCustomPermissions({...customPermissions, canManageAttendance: e.target.checked})} />} 
+                                    label="Manage Attendance/Shifts" 
+                                />
+                                <FormControlLabel 
+                                    control={<Checkbox checked={customPermissions.canManageLeaves} onChange={(e) => setCustomPermissions({...customPermissions, canManageLeaves: e.target.checked})} />} 
+                                    label="Manage Leaves/Approvals" 
+                                />
+                            </FormGroup>
+                        </Card>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenDialog(false)}>Cancel</Button>

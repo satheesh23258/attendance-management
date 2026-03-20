@@ -192,10 +192,10 @@ const ManageEmployees = () => {
   )
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active': return 'success'
-      case 'On Leave': return 'warning'
-      case 'Inactive': return 'error'
+    switch (status?.toLowerCase()) {
+      case 'active': return 'success'
+      case 'on leave': return 'warning'
+      case 'inactive': return 'error'
       default: return 'default'
     }
   }
@@ -284,7 +284,7 @@ const ManageEmployees = () => {
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main">
-                  {employees.filter(emp => emp.status === 'Active').length}
+                  {employees.filter(emp => emp.status?.toLowerCase() === 'active').length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Active Employees
@@ -296,7 +296,7 @@ const ManageEmployees = () => {
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="warning.main">
-                  {employees.filter(emp => emp.status === 'On Leave').length}
+                  {employees.filter(emp => emp.status?.toLowerCase() === 'on leave').length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   On Leave
@@ -308,7 +308,7 @@ const ManageEmployees = () => {
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main">
-                  {employees.filter(emp => emp.status === 'Inactive').length}
+                  {employees.filter(emp => emp.status?.toLowerCase() === 'inactive').length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Inactive
@@ -358,10 +358,15 @@ const ManageEmployees = () => {
                   </TableHead>
                   <TableBody>
                     {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id || employee._id} hover>
+                      <TableRow 
+                        key={employee.id || employee._id} 
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/admin/employee/${employee.id || employee._id}`)}
+                      >
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar sx={{ bgcolor: '#000000' }} src={employee.avatar}>
+                            <Avatar sx={{ bgcolor: '#00c853' }} src={employee.avatar}>
                               {getInitials(employee.name)}
                             </Avatar>
                             <Box>
@@ -387,14 +392,14 @@ const ManageEmployees = () => {
                         <TableCell>
                           <IconButton
                             color="primary"
-                            onClick={() => handleEdit(employee)}
+                            onClick={(e) => { e.stopPropagation(); handleEdit(employee); }}
                             size="small"
                           >
                             <Edit />
                           </IconButton>
                           <IconButton
                             color="error"
-                            onClick={() => handleDelete(employee.id || employee._id)}
+                            onClick={(e) => { e.stopPropagation(); handleDelete(employee.id || employee._id); }}
                             size="small"
                           >
                             <Delete />

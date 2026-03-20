@@ -61,8 +61,6 @@ const HRAttendance = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [detailsDialog, setDetailsDialog] = useState(false)
   const [markDialogOpen, setMarkDialogOpen] = useState(false)
-  const [markingEmployee, setMarkingEmployee] = useState('')
-  const [markingStatus, setMarkingStatus] = useState('present')
   const [markingDate, setMarkingDate] = useState(new Date().toISOString().split('T')[0])
 
 
@@ -116,17 +114,22 @@ const HRAttendance = () => {
 
         const emp = employeesData.find(e => e._id === record.employeeId || e.id === record.employeeId)
 
+        const safeDate = record.date ? new Date(record.date) : new Date();
+        const validDateString = record.date || safeDate.toISOString().split('T')[0];
+
         return {
           ...record,
           id: record._id || record.id,
           employeeId: emp ? emp.employeeId : 'Unknown', // Display String ID
           department: emp ? emp.department : 'Unknown',
           employeeName: record.employeeName || (emp ? emp.name : 'Unknown'),
-          day: new Date(record.date).toLocaleDateString('en-US', { weekday: 'long' }),
+          date: validDateString,
+          day: isNaN(safeDate.getTime()) ? '-' : safeDate.toLocaleDateString('en-US', { weekday: 'long' }),
           checkIn: formatTime(record.checkIn),
           checkOut: formatTime(record.checkOut),
           workingHours: formatDuration(record.workingHours),
-          overtime: formatDuration(record.overtime)
+          overtime: formatDuration(record.overtime),
+          status: record.status || 'present'
         }
       })
 
@@ -200,24 +203,16 @@ const HRAttendance = () => {
     }, 1000)
   }
 
-  const handleManualMarkSubmit = async () => {
+  const handleQuickMark = async (empId, status) => {
     try {
-      if (!markingEmployee) {
-        toast.error('Please select an employee')
-        return
-      }
-
-      const emp = employees.find(e => e._id === markingEmployee || e.id === markingEmployee)
-      
+      const emp = employees.find(e => e._id === empId || e.id === empId)
       await attendanceAPI.mark({
-        employeeId: markingEmployee,
-        status: markingStatus,
+        employeeId: empId,
+        status: status,
         date: markingDate
       })
-
-      toast.success(`Attendance marked for ${emp?.name || 'employee'}`)
-      setMarkDialogOpen(false)
-      fetchData() // Refresh table
+      toast.success(`${status.toUpperCase()} marked for ${emp?.name || 'employee'}`)
+      fetchData() // Refresh table in background
     } catch (error) {
       console.error('Error marking attendance:', error)
       toast.error(error.response?.data?.message || 'Failed to mark attendance')
@@ -248,7 +243,7 @@ const HRAttendance = () => {
   // existing useEffect...
 
   return (
-    <DashboardLayout title="Employee Attendance Management (HR)">
+    <DashboardLayout title={`Employee Attendance Management (${user?.role?.toUpperCase() || 'HR'})`}>
       {/* Header */}
       <Box sx={{
         backgroundColor: '#00c853', // Updated to match theme
@@ -588,55 +583,45 @@ const HRAttendance = () => {
         </DialogActions>
       </Dialog>
       {/* Manual Mark Attendance Dialog */}
-      <Dialog open={markDialogOpen} onClose={() => setMarkDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Manual Attendance Entry</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <FormControl fullWidth>
-              <InputLabel>Select Employee</InputLabel>
-              <Select
-                value={markingEmployee}
-                onChange={(e) => setMarkingEmployee(e.target.value)}
-                label="Select Employee"
-              >
-                {employees.map((emp) => (
-                  <MenuItem key={emp.id || emp._id} value={emp.id || emp._id}>
-                    {emp.name} ({emp.employeeId})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={markingStatus}
-                onChange={(e) => setMarkingStatus(e.target.value)}
-                label="Status"
-              >
-                <MenuItem value="present">Present</MenuItem>
-                <MenuItem value="late">Late</MenuItem>
-                <MenuItem value="absent">Absent</MenuItem>
-                <MenuItem value="half-day">Half Day</MenuItem>
-
-              </Select>
-            </FormControl>
-
+      <Dialog open={markDialogOpen} onClose={() => setMarkDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Quick Mark Attendance</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
-              label="Date"
+              label="Attendance Date"
               type="date"
               fullWidth
+              size="small"
               value={markingDate}
               onChange={(e) => setMarkingDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
+              sx={{ mb: 2 }}
             />
+            {employees.map((emp) => (
+              <Box key={emp.id || emp._id} sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                p: 1.5, 
+                border: '1px solid #e0e0e0', 
+                borderRadius: 2,
+                '&:hover': { bgcolor: '#f5f5f5' }
+              }}>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{emp.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{emp.employeeId} - {emp.department}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button size="small" variant="contained" color="success" onClick={() => handleQuickMark(emp.id || emp._id, 'present')}>Present</Button>
+                  <Button size="small" variant="contained" color="warning" onClick={() => handleQuickMark(emp.id || emp._id, 'late')} sx={{ color: 'white' }}>Late</Button>
+                  <Button size="small" variant="contained" color="error" onClick={() => handleQuickMark(emp.id || emp._id, 'absent')}>Absent</Button>
+                </Box>
+              </Box>
+            ))}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMarkDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" color="secondary" onClick={handleManualMarkSubmit}>
-            Save Record
-          </Button>
+          <Button onClick={() => setMarkDialogOpen(false)}>Done</Button>
         </DialogActions>
       </Dialog>
     </DashboardLayout>

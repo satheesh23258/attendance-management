@@ -94,6 +94,7 @@ const employeeSchema = new mongoose.Schema(
     biometricTemplate: { type: String, default: '' }, // For FaceID/Fingerprint hash
     isBiometricEnabled: { type: Boolean, default: false },
     branchName: { type: String, default: '' },
+    branchLocation: { type: String, default: '' },
     hybridPermissions: {
       hasAccess: { type: Boolean, default: false },
       permissions: { type: Object, default: {} }

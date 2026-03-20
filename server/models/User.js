@@ -59,6 +59,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    branchLocation: {
+      type: String,
+      trim: true,
+    },
     hybridPermissions: {
       hasAccess: {
         type: Boolean,
